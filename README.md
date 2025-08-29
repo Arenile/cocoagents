@@ -1,7 +1,7 @@
 # Project Setup
 
 ## Setting up the virtual environment
-This time we are just using the built-in venv environments with Python. 
+This time we are just using the built-in venv environments with Python. I'm using Python v3.12 in particular. From what I remember anything newer than v3.12 might have issues with ag2. 
 
 ```
 python3.12 -m venv .venv
@@ -20,7 +20,10 @@ Lastly you'll want to set up your API key in a file. The code is written to pull
 ```
 touch .env.sh
 echo "export OPENAI_API_KEY={API KEY HERE!!! NO BRACKETS}" > .env.sh
+source .env.sh
 ```
+
+**Note**: You'll need to do `source .venv/bin/activate` and `source .env.sh` anytime you start a new shell and want to run the project. 
 
 After that if you do `python3 main.py` *right now* you should see the code run but it will likely throw an error about Pydantic not being able to serialize a custom type we are using. 
 
