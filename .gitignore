@@ -1,2 +1,5 @@
 .env.sh
 .venv
+sim_build/
+fm_work/
+**/__pycache__/

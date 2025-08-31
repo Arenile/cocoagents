@@ -2,6 +2,7 @@ from agents.sim_agent import SimulationAgent
 import json
 
 files = ["test_new_top.v", "Adder.v", "Subtractor.v", "Mux.v"]
+
 top = "top"
 tb = "overall_test"
 

@@ -1,0 +1,336 @@
+
+                                 Formality (R)
+
+               Version T-2022.03-SP3 for linux64 - Jul 13, 2022 
+
+                    Copyright (c) 1988 - 2022 Synopsys, Inc.
+   This software and the associated documentation are proprietary to Synopsys,
+ Inc. This software may only be used in accordance with the terms and conditions
+ of a written license agreement with Synopsys, Inc. All other use, reproduction,
+   or distribution of this software is strictly prohibited.  Licensed Products
+     communicate with Synopsys servers for the purpose of providing software
+    updates, detecting software piracy and verifying that customers are using
+    Licensed Products in conformity with the applicable License Key for such
+  Licensed Products. Synopsys will use information gathered in connection with
+    this process to deliver software updates and pursue software pirates and
+                                   infringers.
+
+ Inclusivity & Diversity - Visit SolvNetPlus to read the "Synopsys Statement on
+            Inclusivity and Diversity" (Refer to article 000036315 at
+                        https://solvnetplus.synopsys.com)
+
+Build: 7716028
+Hostname: caen-vnc-mi01.engin.umich.edu
+Current time: Sun Aug 31 15:51:31 2025
+
+Loading db file '/usr/caen/formality-2022.03-SP3/libraries/syn/gtech.db'
+
+Script: master_check.tcl
+
+Warning: Cannot use command line editor for terminal type 'xterm-256color'. (CLE-1)
+# Verification for test_new_top.v vs golden.v
+read_verilog -r golden.v
+No target library specified, default is WORK
+Loading verilog file '/home/sitotaem/cocoagents/golden.v'
+Current container set to 'r'
+1
+read_verilog -r Adder.v
+No target library specified, default is WORK
+Loading verilog file '/home/sitotaem/cocoagents/Adder.v'
+1
+read_verilog -r Subtractor.v
+No target library specified, default is WORK
+Loading verilog file '/home/sitotaem/cocoagents/Subtractor.v'
+1
+read_verilog -r Mux.v
+No target library specified, default is WORK
+Loading verilog file '/home/sitotaem/cocoagents/Mux.v'
+1
+set_top golden
+Setting top design to 'r:/WORK/golden'
+Status:   Elaborating design golden   ...  
+Status:   Elaborating design Subtractor   ...  
+Status:   Elaborating design mux   ...  
+Status:   Elaborating design Adder   ...  
+Status:  Implementing inferred operators...
+Top design successfully set to 'r:/WORK/golden'
+Reference design set to 'r:/WORK/golden'
+1
+read_verilog -i test_new_top.v
+No target library specified, default is WORK
+Loading verilog file '/home/sitotaem/cocoagents/test_new_top.v'
+Current container set to 'i'
+1
+read_verilog -i Adder.v
+No target library specified, default is WORK
+Loading verilog file '/home/sitotaem/cocoagents/Adder.v'
+1
+read_verilog -i Subtractor.v
+No target library specified, default is WORK
+Loading verilog file '/home/sitotaem/cocoagents/Subtractor.v'
+1
+read_verilog -i Mux.v
+No target library specified, default is WORK
+Loading verilog file '/home/sitotaem/cocoagents/Mux.v'
+1
+set_top top
+Setting top design to 'i:/WORK/top'
+Status:   Elaborating design top   ...  
+Status:   Elaborating design Subtractor   ...  
+Status:   Elaborating design mux   ...  
+Status:   Elaborating design Adder   ...  
+Status:  Implementing inferred operators...
+Top design successfully set to 'i:/WORK/top'
+Implementation design set to 'i:/WORK/top'
+1
+match
+Reference design is 'r:/WORK/golden'
+Implementation design is 'i:/WORK/top'
+Status:  Checking designs...
+Status:  Building verification models...
+Status:  Matching...
+    
+*********************************** Matching Results ***********************************    
+ 89 Compare points matched by name    
+ 0 Compare points matched by signature analysis    
+ 0 Compare points matched by topology    
+ 27 Matched primary inputs, black-box outputs    
+ 0(0) Unmatched reference(implementation) compare points    
+ 0(0) Unmatched reference(implementation) primary inputs, black-box outputs    
+****************************************************************************************
+
+1
+verify
+Reference design is 'r:/WORK/golden'
+Implementation design is 'i:/WORK/top'
+    
+*********************************** Matching Results ***********************************    
+ 89 Compare points matched by name    
+ 0 Compare points matched by signature analysis    
+ 0 Compare points matched by topology    
+ 27 Matched primary inputs, black-box outputs    
+ 0(0) Unmatched reference(implementation) compare points    
+ 0(0) Unmatched reference(implementation) primary inputs, black-box outputs    
+****************************************************************************************
+
+Status:  Verifying...
+    Compare point out[0] failed (is not equivalent)
+    Compare point out[1] failed (is not equivalent)
+    Compare point out[2] failed (is not equivalent)
+    Compare point out[3] failed (is not equivalent)
+    Compare point out[4] failed (is not equivalent)
+    Compare point out[5] failed (is not equivalent)
+    Compare point out[6] failed (is not equivalent)
+    Compare point out[7] failed (is not equivalent)
+
+
+********************************* Verification Results *********************************
+Verification FAILED
+-------------------
+ Reference design: r:/WORK/golden
+ Implementation design: i:/WORK/top
+ 81 Passing compare points
+ 8 Failing compare points (8 matched, 0 unmatched)
+ 0 Aborted compare points
+ 0 Unverified compare points
+----------------------------------------------------------------------------------------
+Matched Compare Points     BBPin    Loop   BBNet     Cut    Port     DFF     LAT   TOTAL
+----------------------------------------------------------------------------------------
+Passing (equivalent)           0       0       0       0      65      16       0      81
+Failing (not equivalent)       0       0       0       0       8       0       0       8
+****************************************************************************************
+Info:  Try the analyze_points command to see if Formality can determine potential
+causes, or suggest next steps for a FAILED or INCONCLUSIVE verification.
+See the man page for analyze_points usage and options.
+Info:  Formality Guide Files (SVF) can improve verification success by automating setup.
+0
+diagnose
+Status:  Diagnosing i:/WORK/top vs r:/WORK/golden...
+Status:  Diagnosis initializing...
+Status:  Analyzing patterns...
+    Single error detected in implementation design.
+    Number of error candidates: 2
+    Analysis completed
+Status:  Finding matching regions in reference design...
+    Single matching region detected in reference design.
+Diagnosis completed
+1
+report_failing_points
+**************************************************
+Report         : failing_points
+
+Reference      : r:/WORK/golden
+Implementation : i:/WORK/top
+Version        : T-2022.03-SP3
+Date           : Sun Aug 31 15:51:34 2025
+**************************************************
+
+8 Failing compare points (8 matched, 0 unmatched):
+
+  Ref  Port       r:/WORK/golden/out[0]
+  Impl Port       i:/WORK/top/out[0]
+
+  Ref  Port       r:/WORK/golden/out[1]
+  Impl Port       i:/WORK/top/out[1]
+
+  Ref  Port       r:/WORK/golden/out[2]
+  Impl Port       i:/WORK/top/out[2]
+
+  Ref  Port       r:/WORK/golden/out[3]
+  Impl Port       i:/WORK/top/out[3]
+
+  Ref  Port       r:/WORK/golden/out[4]
+  Impl Port       i:/WORK/top/out[4]
+
+  Ref  Port       r:/WORK/golden/out[5]
+  Impl Port       i:/WORK/top/out[5]
+
+  Ref  Port       r:/WORK/golden/out[6]
+  Impl Port       i:/WORK/top/out[6]
+
+  Ref  Port       r:/WORK/golden/out[7]
+  Impl Port       i:/WORK/top/out[7]
+
+ [BBNet: multiply-driven net
+  BBPin: black-box pin
+  Cut:   cut-point
+  DFF:   non-constant DFF register
+  DFF0:  constant 0 DFF register
+  DFF1:  constant 1 DFF register
+  DFFX:  constant X DFF register
+  DFF0X: constrained 0X DFF register
+  DFF1X: constrained 1X DFF register
+  LAT:   non-constant latch register
+  LAT0:  constant 0 latch register
+  LAT1:  constant 1 latch register
+  LATX:  constant X latch register
+  LAT0X: constrained 0X latch register
+  LAT1X: constrained 1X latch register
+  LATCG: clock-gating latch register
+  TLA:   transparent latch register
+  TLA0X: transparent constrained 0X latch register
+  TLA1X: transparent constrained 1X latch register
+  Loop:  cycle break point
+  Port:  primary (top-level) port
+  Und:   undriven signal cut-point
+  Unk:   unknown signal cut-point]
+
+1
+report_aborted_points
+**************************************************
+Report         : aborted_points
+
+Reference      : r:/WORK/golden
+Implementation : i:/WORK/top
+Version        : T-2022.03-SP3
+Date           : Sun Aug 31 15:51:34 2025
+**************************************************
+
+No aborted compare points.
+
+1
+report_unmatched_points
+**************************************************
+Report         : unmatched_points
+
+Reference      : r:/WORK/golden
+Implementation : i:/WORK/top
+Version        : T-2022.03-SP3
+Date           : Sun Aug 31 15:51:34 2025
+**************************************************
+
+No unmatched points.
+
+1
+report_black_boxes
+**************************************************
+Report         : black_boxes
+
+Reference      : r:/WORK/golden
+Implementation : i:/WORK/top
+Version        : T-2022.03-SP3
+Date           : Sun Aug 31 15:51:34 2025
+**************************************************
+Information: Reporting black boxes for current reference and implementation designs. (FM-184)
+Information: No 'black boxes' matched current 'reference and implementation designs'. (FM-249)
+1
+report_error_candidates
+**************************************************
+Report         : error_candidates
+
+Reference      : r:/WORK/golden
+Implementation : i:/WORK/top
+Version        : T-2022.03-SP3
+Date           : Sun Aug 31 15:51:34 2025
+**************************************************
+
+Single error detected in implementation.
+
+Recommended error candidate:
+
+    Prim    mux1/Logic0_
+
+Alternate error candidates:
+ 1. Prim    mux1/eq_8/C0
+
+1
+report_constants
+**************************************************
+Report         : constants
+
+Reference      : r:/WORK/golden
+Implementation : i:/WORK/top
+Version        : T-2022.03-SP3
+Date           : Sun Aug 31 15:51:34 2025
+**************************************************
+
+User Defined Constants:	None
+
+1
+analyze_points -failing
+Found 2 Unmatched Cone Inputs
+--------------------------------
+Unmatched cone inputs result either from mismatched compare points
+or from differences in the logic within the cones. Only unmatched
+inputs that are suspected of contributing to verification failures
+are included in the report.
+The source of the matching or logical differences may be determined
+using the schematic, cone and source views.
+--------------------------------
+r:/WORK/golden/s[0]
+    Matched with port i:/WORK/top/s[0]
+    Exists in the ref cone but not in the impl cone for 8 compare point(s):
+        i:/WORK/top/out[0]
+        i:/WORK/top/out[1]
+        i:/WORK/top/out[2]
+        i:/WORK/top/out[3]
+        i:/WORK/top/out[4]
+        i:/WORK/top/out[5]
+        i:/WORK/top/out[6]
+        i:/WORK/top/out[7]
+
+-----------
+i:/WORK/top/reset[0]
+    Matched with port r:/WORK/golden/reset[0]
+    Exists in the impl cone but not in the ref cone for 8 compare point(s):
+        r:/WORK/golden/out[0]
+        r:/WORK/golden/out[1]
+        r:/WORK/golden/out[2]
+        r:/WORK/golden/out[3]
+        r:/WORK/golden/out[4]
+        r:/WORK/golden/out[5]
+        r:/WORK/golden/out[6]
+        r:/WORK/golden/out[7]
+
+-----------
+--------------------------------
+****************************************************************************************
+Analysis Completed
+1
+exit
+Maximum memory usage for this session: 747 MB
+CPU usage for this session: 0.93 seconds ( 0.00 hours )
+Current time: Sun Aug 31 15:51:35 2025
+Elapsed time: 4 seconds ( 0.00 hours )
+
+Thank you for using Formality (R)!
