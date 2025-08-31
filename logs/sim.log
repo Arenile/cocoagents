@@ -1,0 +1,67 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:108  in set_program_name_in_venv        Using Python virtual environment interpreter at /home/sitotaem/Documents/cocoagents/.venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:101  in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Icarus Verilog version 10.3 (stable)
+     0.00ns INFO     cocotb                             Running tests with cocotb v1.9.2 from /home/sitotaem/Documents/cocoagents/.venv/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb                             Seeding Python random module with 1756662265
+     0.00ns INFO     cocotb.regression                  pytest not found, install it to enable better AssertionError messages
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  Found test overall_test.<lambda>
+     0.00ns INFO     cocotb.regression                  running <lambda> (1/10)
+     5.00ns INFO     cocotb.top                         Test 1 passed with inputs {'a': 6, 'b': 3, 'c': 2} and outputs {'add1_a_monitor': 6}
+     5.00ns INFO     cocotb.regression                  <lambda> passed
+     5.00ns INFO     cocotb.regression                  running <lambda> (2/10)
+    10.00ns INFO     cocotb.top                         Test 2 passed with inputs {'a': 6, 'b': 3, 'c': 2} and outputs {'add1_b_monitor': 3}
+    10.00ns INFO     cocotb.regression                  <lambda> passed
+    10.00ns INFO     cocotb.regression                  running <lambda> (3/10)
+    15.00ns INFO     cocotb.top                         Test 3 passed with inputs {'a': 6, 'b': 3, 'c': 2} and outputs {'add1_o_sum_monitor': 9}
+    15.00ns INFO     cocotb.regression                  <lambda> passed
+    15.00ns INFO     cocotb.regression                  running <lambda> (4/10)
+    20.00ns INFO     cocotb.top                         Test 4 passed with inputs {'a': 6, 'b': 3, 'c': 2} and outputs {'sub1_a_monitor': 6}
+    20.00ns INFO     cocotb.regression                  <lambda> passed
+    20.00ns INFO     cocotb.regression                  running <lambda> (5/10)
+    25.00ns INFO     cocotb.top                         Test 5 passed with inputs {'a': 6, 'b': 3, 'c': 2} and outputs {'sub1_b_monitor': 2}
+    25.00ns INFO     cocotb.regression                  <lambda> passed
+    25.00ns INFO     cocotb.regression                  running <lambda> (6/10)
+    30.00ns INFO     cocotb.top                         Test 6 passed with inputs {'a': 6, 'b': 3, 'c': 2} and outputs {'sub1_diff_monitor': 4}
+    30.01ns INFO     cocotb.regression                  <lambda> passed
+    30.01ns INFO     cocotb.regression                  running <lambda> (7/10)
+    35.01ns INFO     cocotb.top                         Test 7 passed with inputs {'a': 6, 'b': 3, 'c': 2, 's': 0} and outputs {'mux1_a_monitor': 9}
+    35.01ns INFO     cocotb.regression                  <lambda> passed
+    35.01ns INFO     cocotb.regression                  running <lambda> (8/10)
+    40.01ns INFO     cocotb.top                         Test 8 passed with inputs {'a': 6, 'b': 3, 'c': 2, 's': 0} and outputs {'mux1_b_monitor': 4}
+    40.01ns INFO     cocotb.regression                  <lambda> passed
+    40.01ns INFO     cocotb.regression                  running <lambda> (9/10)
+    45.01ns INFO     cocotb.regression                  <lambda> failed
+                                                        Traceback (most recent call last):
+                                                          File "/home/sitotaem/Documents/cocoagents/overall_test.py", line 55, in run_single_test
+                                                            assert actual_int == expected_val, (
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                        AssertionError: Test 9: out expected 0x9, got 0x4
+    45.01ns INFO     cocotb.regression                  running <lambda> (10/10)
+    50.01ns INFO     cocotb.top                         Test 10 passed with inputs {'a': 6, 'b': 3, 'c': 2, 's': 1} and outputs {'out': 4}
+    50.01ns INFO     cocotb.regression                  <lambda> passed
+    50.01ns INFO     cocotb.regression                  ***************************************************************************************
+                                                        ** TEST                           STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        ***************************************************************************************
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       4571.86  **
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       6101.14  **
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       7057.78  **
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       6538.56  **
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       6770.73  **
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       7031.75  **
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       6165.70  **
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       7108.00  **
+                                                        ** overall_test.<lambda>           FAIL           5.00           0.00       7491.33  **
+                                                        ** overall_test.<lambda>           PASS           5.00           0.00       7686.23  **
+                                                        ***************************************************************************************
+                                                        ** TESTS=10 PASS=9 FAIL=1 SKIP=0                 50.01           0.01       4463.87  **
+                                                        ***************************************************************************************
+                                                        

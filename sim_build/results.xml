@@ -1,0 +1,17 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1756662265" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0010938644409179688" sim_time_ns="5.001" ratio_time="4571.864495204883" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0008196830749511719" sim_time_ns="5.001" ratio_time="6101.138541012217" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0007085800170898438" sim_time_ns="5.0009999999999994" ratio_time="7057.77735666218" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0007648468017578125" sim_time_ns="5.001000000000001" ratio_time="6538.564309226935" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0007386207580566406" sim_time_ns="5.000999999999998" ratio_time="6770.727664299545" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0007112026214599609" sim_time_ns="5.001000000000001" ratio_time="7031.751359034531" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0008111000061035156" sim_time_ns="5.000999999999998" ratio_time="6165.700853615517" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0007035732269287109" sim_time_ns="5.001000000000005" ratio_time="7108.002136225015" />
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.000667572021484375" sim_time_ns="5.000999999999998" ratio_time="7491.326537142853">
+      <failure message="Test failed with RANDOM_SEED=1756662265" />
+    </testcase>
+    <testcase name="&lt;lambda&gt;" classname="overall_test" file="/home/sitotaem/Documents/cocoagents/overall_test.py" lineno="63" time="0.0006506443023681641" sim_time_ns="5.000999999999998" ratio_time="7686.227300842796" />
+  </testsuite>
+</testsuites>
