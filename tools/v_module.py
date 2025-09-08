@@ -63,17 +63,31 @@ class VPort:
     """
     def __init__(
             self, 
-            port_name: str, 
-            port_width: int, 
-            port_type: PORT_TYPE, 
-            v_module: VModule, 
-            port_idx: int
+            port_name: str = "",
+            port_width: int = 0,
+            port_type: PORT_TYPE = PORT_TYPE.INPUT,
+            v_module: VModule = None,
+            port_idx: int = -1,
+            json_init: dict = None
             ):
-        self.type: PORT_TYPE = port_type
-        self.name: str = port_name
-        self.width: int = port_width
-        self.v_module: VModule = v_module
-        self.port_idx: int = port_idx
+        if json_init is None:
+            self.type: PORT_TYPE = port_type
+            self.name: str = port_name
+            self.width: int = port_width
+            self.v_module: VModule = v_module
+            self.port_idx: int = port_idx
+        else:
+            if json_init["port_type"] == "INPUT":
+                self.type = PORT_TYPE.INPUT
+            elif json_init["port_type"] == "OUTPUT":
+                self.type = PORT_TYPE.INOUT
+            else:
+                self.type = PORT_TYPE.INOUT
+
+            self.name = json_init["port_name"]
+            self.port_idx = json_init["port_idx"]
+            self.width = json_init["port_width"]
+            self.v_module = json_init["v_module"]
     
     def __str__(self):
         return self.name
@@ -87,16 +101,23 @@ class VPort:
             "port_idx": int(self.port_idx)
         }
 
+
 class VWire:
     def __init__(
             self, 
-            wire_name: str, 
-            wire_width: int, 
-            v_module: VModule
+            wire_name: str = "",
+            wire_width: int = 0,
+            v_module: VModule = None,
+            json_init: dict = None
             ):
-        self.name: str = wire_name
-        self.width: int = wire_width
-        self.v_module: VModule = v_module
+        if json_init is None:
+            self.name: str = wire_name
+            self.width: int = wire_width
+            self.v_module: VModule = v_module
+        else:
+            self.name = json_init["wire_name"]
+            self.width = json_init["wire_width"]
+            self.v_module = json_init["v_module"]
     
     def __str__(self):
         return self.name
@@ -111,13 +132,19 @@ class VWire:
 class VReg:
     def __init__(
             self, 
-            reg_name: str, 
-            reg_width: int, 
-            v_module: VModule
+            reg_name: str = "",
+            reg_width: int = 0,
+            v_module: VModule = None,
+            json_init: dict = None
             ):
-        self.name: str = reg_name
-        self.width: int = reg_width
-        self.v_module: VModule = v_module
+        if json_init is None:
+            self.name: str = reg_name
+            self.width: int = reg_width
+            self.v_module: VModule = v_module
+        else:
+            self.name = json_init["reg_name"]
+            self.width = json_init["reg_width"]
+            self.v_module = json_init["v_module"]
 
     def to_dict(self):
         return {
@@ -138,11 +165,16 @@ class VInstance:
     """
     def __init__(
             self,
-            name: str,
-            module: VModule
+            name: str = "",
+            module: VModule = None,
+            json_init: dict = None
     ):
-        self.name: str = name
-        self.module: VModule = module
+        if json_init is None:
+            self.name: str = name
+            self.module: VModule = module
+        else:
+            self.name = json_init["name"]
+            self.module = VModule(json_init=json_init["module"])
 
     def to_dict(self):
         return {
@@ -177,15 +209,24 @@ class VConnection:
     """
     def __init__(
             self, 
-            f_port: VWire|VPort|VReg, 
-            t_port: VWire|VPort|VReg, 
+            f_port: VWire|VPort|VReg = None,
+            t_port: VWire|VPort|VReg = None,
             f_instance: VInstance = None, 
-            t_instance: VInstance = None
+            t_instance: VInstance = None,
+            json_init: dict = None
             ):
-        self.f_port: VWire|VPort|VReg = f_port
-        self.t_port: VWire|VPort|VReg = t_port 
-        self.f_instance: VInstance = f_instance
-        self.t_instance: VInstance = t_instance
+        if json_init is None:
+            self.f_port: VWire|VPort|VReg = f_port
+            self.t_port: VWire|VPort|VReg = t_port
+            self.f_instance: VInstance = f_instance
+            self.t_instance: VInstance = t_instance
+        else:
+            self.f_port = VPort(json_init=json_init["f_port"])
+            self.t_port = VPort(json_init=json_init["t_port"])
+            if json_init["f_instance"] != "None":
+                self.f_instance = VInstance(json_init=json_init["f_instance"])
+            if json_init["t_instance"] != "None":
+                self.t_instance = VInstance(json_init=json_init["t_instance"])
 
     def to_dict(self):
         return {
@@ -219,7 +260,12 @@ class VModule:
             loop to this value to generate a model of each \
             Verilog Module in that source. 
     """
-    def __init__(self, ast_input: vast.Source, mod_idx: int = 0):
+    def __init__(
+        self,
+        ast_input: vast.Source = None,
+        mod_idx: int = 0,
+        json_init: dict = None
+        ):
         if ast_input is not None:
             working_mod: vast.ModuleDef = ast_input.children()[0].children()[mod_idx]
             working_ports_list: tuple[vast.Ioport] = working_mod.portlist.children()
@@ -251,6 +297,10 @@ class VModule:
                 ))
 
             self.name: str = working_mod.name
+        elif json_init is not None: # What I'm doing here is cursed
+            self.name = json_init["name"]
+            self.portlist = [VPort(port) for port in json_init["portlist"]]
+            self.declared_instances = json_init["declared_instances"]
         else:
             self.name: str = ""
             self.portlist: list[VPort] = []
@@ -274,37 +324,42 @@ class VTop(VModule):
     """
     def __init__(
             self,
-            connection_list: list[VConnection], 
-            io_ports: set[VPort]
+            connection_list: list[VConnection] = None,
+            io_ports: set[VPort] = None,
+            json_init: dict = None
     ):
-        self.connection_list: list[VConnection] = connection_list
-        self.instances_set: set[VInstance] = set()
-        self.connection_map: dict[VInstance:list[VConnection]] = {}
-        self.port_list: list[VPort] = []
-        self.io_ports: set[VPort] = io_ports
-        
-        self.module: VModule = VModule(None, 0)
-        self.module.portlist = io_ports
-        self.module.name = "top"
-        self.top_instance: VInstance = VInstance(
-            "top", self.module
-        )
+        if json_init is None:
+            self.connection_list: list[VConnection] = connection_list
+            self.instances_set: set[VInstance] = set()
+            self.connection_map: dict[VInstance:list[VConnection]] = {}
+            self.port_list: list[VPort] = []
+            self.io_ports: set[VPort] = io_ports
 
-        for connection in self.connection_list:
-            if connection.f_instance != None:
-                self.instances_set.add(connection.f_instance)
-            self.instances_set.add(connection.t_instance)
-        
-        for connection in self.connection_list:
-            if connection.f_instance != None:
+            self.module: VModule = VModule(None, 0)
+            self.module.portlist = io_ports
+            self.module.name = "top"
+            self.top_instance: VInstance = VInstance(
+                "top", self.module
+            )
+
+            for connection in self.connection_list:
+                if connection.f_instance != None:
+                    self.instances_set.add(connection.f_instance)
+                self.instances_set.add(connection.t_instance)
+
+            for connection in self.connection_list:
+                if connection.f_instance != None:
+                    try:
+                        self.connection_map[connection.f_instance].append(connection)
+                    except(KeyError):
+                        self.connection_map[connection.f_instance] = [connection]
                 try:
-                    self.connection_map[connection.f_instance].append(connection)
+                    self.connection_map[connection.t_instance].append(connection)
                 except(KeyError):
-                    self.connection_map[connection.f_instance] = [connection]
-            try:
-                self.connection_map[connection.t_instance].append(connection)
-            except(KeyError):
-                self.connection_map[connection.t_instance] = [connection]
+                    self.connection_map[connection.t_instance] = [connection]
+
+        else:
+            self.connection_list = json_init["connection_list"]
     
     def to_dict(self):
         connection_map_dict = {}
