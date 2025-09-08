@@ -2,6 +2,7 @@
 from __future__ import annotations
 import pyverilog 
 import pyverilog.vparser.ast as vast
+import json
 from enum import Enum
 from textwrap import dedent
 
@@ -28,6 +29,11 @@ class PORT_TYPE(Enum):
     OUTPUT = 1
     INOUT = 2
 
+    def to_dict(self):
+        return {
+            "type": str(self.name)
+        }
+
 class CONNECT_TYPE(Enum):
     """
     A connection can be to an I/O Port, to a wire, or to a register
@@ -35,6 +41,11 @@ class CONNECT_TYPE(Enum):
     IO_PORT = 0
     WIRE = 1
     REG = 2
+
+    def to_dict(self):
+        return {
+            "type": str(self.name)
+        }
 
 class VPort: 
     """
@@ -64,8 +75,17 @@ class VPort:
         self.v_module: VModule = v_module
         self.port_idx: int = port_idx
     
-    def __repr__(self):
+    def __str__(self):
         return self.name
+    
+    def to_dict(self) -> dict:
+        return {
+            "port_name": str(self.name),
+            "port_width": int(self.width),
+            "port_type": self.type.to_dict(),
+            "v_module": self.v_module.to_dict() if self.v_module is not None else "None",
+            "port_idx": int(self.port_idx)
+        }
 
 class VWire:
     def __init__(
@@ -78,8 +98,15 @@ class VWire:
         self.width: int = wire_width
         self.v_module: VModule = v_module
     
-    def __repr__(self):
+    def __str__(self):
         return self.name
+    
+    def to_dict(self):
+        return {
+            "wire_name": str(self.name),
+            "wire_width": int(self.width),
+            "v_module": self.v_module.to_dict() if self.v_module is not None else "None"
+        }
 
 class VReg:
     def __init__(
@@ -91,6 +118,13 @@ class VReg:
         self.name: str = reg_name
         self.width: int = reg_width
         self.v_module: VModule = v_module
+
+    def to_dict(self):
+        return {
+            "reg_name": self.name,
+            "reg_width": self.width,
+            "v_module": self.v_module.to_dict() if self.v_module is not None else "None"
+        }
 
 class VInstance:
     """
@@ -110,6 +144,12 @@ class VInstance:
         self.name: str = name
         self.module: VModule = module
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "module": self.module
+        }
+
     def __hash__(self):
         return hash(self.name)
     
@@ -121,7 +161,7 @@ class VInstance:
         else:
             return False
 
-    def __repr__(self) :
+    def __str__(self) :
         return self.name
 
 class VConnection:
@@ -146,8 +186,16 @@ class VConnection:
         self.t_port: VWire|VPort|VReg = t_port 
         self.f_instance: VInstance = f_instance
         self.t_instance: VInstance = t_instance
+
+    def to_dict(self):
+        return {
+            "f_port": self.f_port.to_dict(),
+            "t_port": self.t_port.to_dict(),
+            "f_instance": self.f_instance.to_dict() if self.f_instance is not None else "None",
+            "t_instance": self.t_instance.to_dict() if self.t_instance is not None else "None"
+        }
     
-    def __repr__(self):
+    def __str__(self):
         if type(self.t_port) == int:   
             return f"{self.f_instance}:{self.f_port},{self.t_instance}:[{self.t_port}]" 
         else:
@@ -207,6 +255,13 @@ class VModule:
             self.name: str = ""
             self.portlist: list[VPort] = []
             self.declared_instances: list[VInstance] = []
+    
+    def to_dict(self):
+        return {
+            "name": str(self.name), 
+            "portlist": str(self.portlist), 
+            "declared_instances": str(self.declared_instances)
+        }
         
 
 class VTop(VModule):
@@ -250,7 +305,12 @@ class VTop(VModule):
                 self.connection_map[connection.t_instance].append(connection)
             except(KeyError):
                 self.connection_map[connection.t_instance] = [connection]
-
+    
+    def to_dict(self):
+        return {
+            "connection_list": [connection.to_dict() for connection in self.connection_list]
+        }
+    
     def getPossibleConnections(self) -> list[str]:
         inputs_list = []
         outputs_list = []

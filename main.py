@@ -4,13 +4,18 @@ from tools.connection_maker import print_design, get_starting_design, modify_con
 # Main file for configuring LLM Agents 
 
 # LLM setup 
-llm_config = LLMConfig(
-    api_type="openai",
-    model="gpt-4o-mini",
-    api_key=os.environ["OPENAI_API_KEY"],
-    temperature=0.5,
-    arbitrary_types_allowed=True
-)
+# llm_config = LLMConfig(
+#     api_type="openai",
+#     model="gpt-4o-mini",
+#     api_key=os.environ["OPENAI_API_KEY"],
+#     temperature=0.5,
+#     arbitrary_types_allowed=True
+# )
+ollama_config = {
+    "model": "deepseek-r1:14b",
+    "api_type": "ollama", 
+    "client_host": "http://10.0.0.58:11434"
+}
 
 designer_system_msg = """
 You are a computer hardware engineer. You receive instructions on 
@@ -31,13 +36,13 @@ Provide clear reasoning for the connection changes you make.
 # Agent setup
 connection_agent = ConversableAgent(
     name="connection_agent", 
-    system_message=designer_system_msg, 
-    llm_config=llm_config,
-    functions=[modify_connections, print_design, get_starting_design]
+    system_message="You are a computer hardware engineer", 
+    llm_config=ollama_config,
+    # functions=[modify_connections, print_design, get_starting_design]
 )
 
 test_response = connection_agent.run(
-    message="Please change the current design so that inputs A and B go to the subtractor instead of A and C.", 
+    message="How many pipeline stages should I have for my out-of-order RISC-V CPU?", 
     max_turns=2,
     user_input=True
 )

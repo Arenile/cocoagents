@@ -1,10 +1,11 @@
 import v_module as vmod
 import pyverilog
+import json
 import pyverilog.vparser.ast as vast
 from pyverilog.vparser.parser import parse
 from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 
-extop_ast, extop_directives = parse(["../verilog_src/ex_top.v"])
+extop_ast, extop_directives = parse(["../ex_top.v"])
 
 # extop_ast.show()
 
@@ -119,6 +120,9 @@ io_connections: list[vmod.VConnection] = [
     ),
 ]
 
+print(" !!!PRINTING A_PORT DICT!!! ")
+print(json.dumps(io_ports["a_port"].to_dict()))
+
 wire_connections: list[vmod.VConnection] = [
     vmod.VConnection(
         add_instance.module.portlist[4],
@@ -142,6 +146,7 @@ top_connections = io_connections + wire_connections
 # bugged_new_state[20] = 1
 
 top_mod = vmod.VTop(top_connections, set(io_ports.values()))
+print(f"!!! TOP MOD TO DICT !!! \n{top_mod.to_dict()}")
 test_connect = top_mod.getPossibleConnections()
 test_cur_connect = top_mod.getCurrentConnections()
 
