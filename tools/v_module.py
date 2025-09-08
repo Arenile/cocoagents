@@ -83,7 +83,7 @@ class VPort:
             "port_name": str(self.name),
             "port_width": int(self.width),
             "port_type": self.type.to_dict(),
-            "v_module": self.v_module.to_dict() if self.v_module is not None else "None",
+            "v_module": self.v_module.name if self.v_module is not None else "None",
             "port_idx": int(self.port_idx)
         }
 
@@ -105,7 +105,7 @@ class VWire:
         return {
             "wire_name": str(self.name),
             "wire_width": int(self.width),
-            "v_module": self.v_module.to_dict() if self.v_module is not None else "None"
+            "v_module": self.v_module.name if self.v_module is not None else "None"
         }
 
 class VReg:
@@ -123,7 +123,7 @@ class VReg:
         return {
             "reg_name": self.name,
             "reg_width": self.width,
-            "v_module": self.v_module.to_dict() if self.v_module is not None else "None"
+            "v_module": self.v_module.name if self.v_module is not None else "None"
         }
 
 class VInstance:
@@ -147,7 +147,7 @@ class VInstance:
     def to_dict(self):
         return {
             "name": self.name,
-            "module": self.module
+            "module": self.module.to_dict()
         }
 
     def __hash__(self):
@@ -259,8 +259,8 @@ class VModule:
     def to_dict(self):
         return {
             "name": str(self.name), 
-            "portlist": str(self.portlist), 
-            "declared_instances": str(self.declared_instances)
+            "portlist": [port.to_dict() for port in self.portlist],
+            "declared_instances": [instance.name for instance in self.declared_instances]
         }
         
 
@@ -307,8 +307,18 @@ class VTop(VModule):
                 self.connection_map[connection.t_instance] = [connection]
     
     def to_dict(self):
+        connection_map_dict = {}
+
+        for instance, connect_list in self.connection_map.items():
+            connection_map_dict[instance.name] = [connection.to_dict() for connection in connect_list]
+
         return {
-            "connection_list": [connection.to_dict() for connection in self.connection_list]
+            "connection_list": [connection.to_dict() for connection in self.connection_list], 
+            "instances_set": [instance.to_dict() for instance in self.instances_set], 
+            "connection_map": connection_map_dict, 
+            "port_list": [port.to_dict() for port in self.port_list],
+            "io_ports": [port.to_dict() for port in self.io_ports],
+            "module": self.module.to_dict()
         }
     
     def getPossibleConnections(self) -> list[str]:
