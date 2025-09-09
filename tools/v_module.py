@@ -1,10 +1,9 @@
 # This import is necessary to support hoisting type annotations (WHY???)
 from __future__ import annotations
-import pyverilog 
 import pyverilog.vparser.ast as vast
-import json
+import uuid
 from enum import Enum
-from textwrap import dedent
+
 
 def count_mods_in_source(ast_source: vast.Source) -> int:
     """
@@ -16,38 +15,48 @@ def count_mods_in_source(ast_source: vast.Source) -> int:
         This is intended to be used when creating modules with the VModule \
         class. 
     """
-    if type(ast_source.children()[0]) == vast.Description:
+    if isinstance(ast_source.children()[0], vast.Description):
         return len(ast_source.children()[0].children())
     else:
         return 1
+
 
 class PORT_TYPE(Enum):
     """
     Enum to represent Verilog port types
     """
+
     INPUT = 0
     OUTPUT = 1
     INOUT = 2
 
     def to_dict(self):
-        return {
-            "type": str(self.name)
-        }
+        return {"type": str(self.name)}
+
 
 class CONNECT_TYPE(Enum):
     """
     A connection can be to an I/O Port, to a wire, or to a register
     """
+
     IO_PORT = 0
     WIRE = 1
     REG = 2
 
     def to_dict(self):
-        return {
-            "type": str(self.name)
-        }
+        return {"type": str(self.name)}
 
-class VPort: 
+
+class VComponent:
+    def __init__(self, name: str = "") -> None:
+        self.name: str = name
+        self.uuid: int = uuid.uuid4().int
+
+    def to_dict(self):
+        return {"name": self.name, "uuid": self.uuid}
+
+
+class VPort(VComponent):
     """
     Model for a Port in Verilog. These only need to be explicitly declared for the\
     top level connector module. 
@@ -61,18 +70,19 @@ class VPort:
             this port for your I/O ports, you pass None to this. 
         port_idx: The index of this port for the particular module it's a port to. 
     """
+
     def __init__(
-            self, 
-            port_name: str = "",
-            port_width: int = 0,
-            port_type: PORT_TYPE = PORT_TYPE.INPUT,
-            v_module: VModule = None,
-            port_idx: int = -1,
-            json_init: dict = None
-            ):
+        self,
+        name: str = "",
+        port_width: int = 0,
+        port_type: PORT_TYPE = PORT_TYPE.INPUT,
+        v_module: VModule | None = None,
+        port_idx: int = -1,
+        json_init: dict | None = None,
+    ):
         if json_init is None:
+            super().__init__(name=name)
             self.type: PORT_TYPE = port_type
-            self.name: str = port_name
             self.width: int = port_width
             self.v_module: VModule = v_module
             self.port_idx: int = port_idx
@@ -84,76 +94,75 @@ class VPort:
             else:
                 self.type = PORT_TYPE.INOUT
 
-            self.name = json_init["port_name"]
+            super().__init__(name=json_init["name"])
             self.port_idx = json_init["port_idx"]
             self.width = json_init["port_width"]
             self.v_module = json_init["v_module"]
-    
+
     def __str__(self):
         return self.name
-    
+
     def to_dict(self) -> dict:
-        return {
-            "port_name": str(self.name),
+        return super().to_dict() | {
             "port_width": int(self.width),
             "port_type": self.type.to_dict(),
-            "v_module": self.v_module.name if self.v_module is not None else "None",
-            "port_idx": int(self.port_idx)
+            "v_module": self.v_module.uuid if self.v_module is not None else "None",
+            "port_idx": int(self.port_idx),
         }
 
 
-class VWire:
+class VWire(VComponent):
     def __init__(
-            self, 
-            wire_name: str = "",
-            wire_width: int = 0,
-            v_module: VModule = None,
-            json_init: dict = None
-            ):
+        self,
+        name: str = "",
+        wire_width: int = 0,
+        v_module: VModule | None = None,
+        json_init: dict | None = None,
+    ):
         if json_init is None:
-            self.name: str = wire_name
+            super().__init__(name=name)
             self.width: int = wire_width
             self.v_module: VModule = v_module
         else:
-            self.name = json_init["wire_name"]
+            super().__init__(name=json_init["name"])
             self.width = json_init["wire_width"]
             self.v_module = json_init["v_module"]
-    
+
     def __str__(self):
         return self.name
-    
+
     def to_dict(self):
-        return {
-            "wire_name": str(self.name),
+        return super().to_dict() | {
             "wire_width": int(self.width),
-            "v_module": self.v_module.name if self.v_module is not None else "None"
+            "v_module": self.v_module.uuid if self.v_module is not None else "None",
         }
 
-class VReg:
+
+class VReg(VComponent):
     def __init__(
-            self, 
-            reg_name: str = "",
-            reg_width: int = 0,
-            v_module: VModule = None,
-            json_init: dict = None
-            ):
+        self,
+        name: str = "",
+        reg_width: int = 0,
+        v_module: VModule | None = None,
+        json_init: dict | None = None,
+    ):
         if json_init is None:
-            self.name: str = reg_name
+            super().__init__(name=name)
             self.width: int = reg_width
             self.v_module: VModule = v_module
         else:
-            self.name = json_init["reg_name"]
+            super().__init__(name=json_init["name"])
             self.width = json_init["reg_width"]
             self.v_module = json_init["v_module"]
 
     def to_dict(self):
-        return {
-            "reg_name": self.name,
+        return super().to_dict() | {
             "reg_width": self.width,
-            "v_module": self.v_module.name if self.v_module is not None else "None"
+            "v_module": self.v_module.uuid if self.v_module is not None else "None",
         }
 
-class VInstance:
+
+class VInstance(VComponent):
     """
     Model for an instance of a Verilog module. Not to be confused with VModule, this is\
     how actually instantiating a module in archiectural Verilog is modeled. 
@@ -163,64 +172,64 @@ class VInstance:
             "Adder" module would be appropriate. 
         module: The VModule model this is an instantiation of.
     """
+
     def __init__(
-            self,
-            name: str = "",
-            module: VModule = None,
-            json_init: dict = None
+        self,
+        name: str = "",
+        module: VModule | None = None,
+        json_init: dict | None = None,
     ):
         if json_init is None:
-            self.name: str = name
+            super().__init__(name=name)
             self.module: VModule = module
         else:
-            self.name = json_init["name"]
+            super().__init__(name=json_init["name"])
             self.module = VModule(json_init=json_init["module"])
 
     def to_dict(self):
-        return {
-            "name": self.name,
-            "module": self.module.to_dict()
-        }
+        return super().to_dict() | {"name": self.name, "module": self.module.to_dict()}
 
     def __hash__(self):
         return hash(self.name)
-    
+
     def __eq__(self, other):
         if isinstance(other, VInstance):
-            return ((
-                self.name == other.name
-            ))
+            return self.name == other.name
         else:
             return False
 
-    def __str__(self) :
+    def __str__(self):
         return self.name
 
-class VConnection:
+
+class VConnection(VComponent):
     """
-    Model of a connection made between two modules or instances of modules. 
+    Model of a connection made between two modules or instances of modules.
 
     Params:
-        f_port: "from port" is a port that data flows from in this connection. 
-        t_port: "to port" is a port that data flows to in this connection. 
-        f_instance: "from instance" is the instance that f_port belongs to. NOTE: If 
-            this is a top-level I/O port, then you should pass {None} to this. 
+        f_port: "from port" is a port that data flows from in this connection.
+        t_port: "to port" is a port that data flows to in this connection.
+        f_instance: "from instance" is the instance that f_port belongs to. NOTE: If
+            this is a top-level I/O port, then you should pass {None} to this.
         t_instance: "to instance" is the instance that t_port belongs to.
     """
+
     def __init__(
-            self, 
-            f_port: VWire|VPort|VReg = None,
-            t_port: VWire|VPort|VReg = None,
-            f_instance: VInstance = None, 
-            t_instance: VInstance = None,
-            json_init: dict = None
-            ):
+        self,
+        f_port: VWire | VPort | VReg | None = None,
+        t_port: VWire | VPort | VReg | None = None,
+        f_instance: VInstance | None = None,
+        t_instance: VInstance | None = None,
+        json_init: dict | None = None,
+    ):
         if json_init is None:
-            self.f_port: VWire|VPort|VReg = f_port
-            self.t_port: VWire|VPort|VReg = t_port
-            self.f_instance: VInstance = f_instance
-            self.t_instance: VInstance = t_instance
+            super().__init__()
+            self.f_port: VWire | VPort | VReg | None = f_port
+            self.t_port: VWire | VPort | VReg | None = t_port
+            self.f_instance: VInstance | None = f_instance
+            self.t_instance: VInstance | None = t_instance
         else:
+            super().__init__()
             self.f_port = VPort(json_init=json_init["f_port"])
             self.t_port = VPort(json_init=json_init["t_port"])
             if json_init["f_instance"] != "None":
@@ -229,20 +238,25 @@ class VConnection:
                 self.t_instance = VInstance(json_init=json_init["t_instance"])
 
     def to_dict(self):
-        return {
-            "f_port": self.f_port.to_dict(),
-            "t_port": self.t_port.to_dict(),
-            "f_instance": self.f_instance.to_dict() if self.f_instance is not None else "None",
-            "t_instance": self.t_instance.to_dict() if self.t_instance is not None else "None"
+        return super().to_dict() | {
+            "f_port": self.f_port.to_dict() if self.f_port is not None else "",
+            "t_port": self.t_port.to_dict() if self.t_port is not None else "",
+            "f_instance": self.f_instance.uuid
+            if self.f_instance is not None
+            else "None",
+            "t_instance": self.t_instance.uuid
+            if self.t_instance is not None
+            else "None",
         }
-    
-    def __str__(self):
-        if type(self.t_port) == int:   
-            return f"{self.f_instance}:{self.f_port},{self.t_instance}:[{self.t_port}]" 
-        else:
-            return f"{self.f_instance}:{self.f_port},{self.t_instance}:{self.t_port}" 
 
-class VModule:
+    def __str__(self):
+        if self.t_port is int:
+            return f"{self.f_instance}:{self.f_port},{self.t_instance}:[{self.t_port}]"
+        else:
+            return f"{self.f_instance}:{self.f_port},{self.t_instance}:{self.t_port}"
+
+
+class VModule(VComponent):
     """
     VModule parses out parts of the AST input to fill module \
     members for a given Verilog Module. This class is meant \
@@ -260,12 +274,13 @@ class VModule:
             loop to this value to generate a model of each \
             Verilog Module in that source. 
     """
+
     def __init__(
         self,
-        ast_input: vast.Source = None,
+        ast_input: vast.Source | None = None,
         mod_idx: int = 0,
-        json_init: dict = None
-        ):
+        json_init: dict | None = None,
+    ):
         if ast_input is not None:
             working_mod: vast.ModuleDef = ast_input.children()[0].children()[mod_idx]
             working_ports_list: tuple[vast.Ioport] = working_mod.portlist.children()
@@ -285,34 +300,34 @@ class VModule:
                     wport_type = PORT_TYPE.INOUT
 
                 if type(wport.first.width) == vast.Width:
-                    wport_width = (int(wport.first.width.msb.value) - 
-                                int(wport.first.width.lsb.value) + 1)
+                    wport_width = (
+                        int(wport.first.width.msb.value)
+                        - int(wport.first.width.lsb.value)
+                        + 1
+                    )
 
-                self.portlist.append(VPort(
-                    wport.first.name,
-                    wport_width,
-                    wport_type, 
-                    self,
-                    wport_idx
-                ))
+                self.portlist.append(
+                    VPort(wport.first.name, wport_width, wport_type, self, wport_idx)
+                )
 
-            self.name: str = working_mod.name
-        elif json_init is not None: # What I'm doing here is cursed
-            self.name = json_init["name"]
+            super().__init__(name=working_mod.name)
+        elif json_init is not None:  # What I'm doing here is cursed
+            super().__init__(name=json_init["name"])
             self.portlist = [VPort(port) for port in json_init["portlist"]]
             self.declared_instances = json_init["declared_instances"]
         else:
-            self.name: str = ""
+            super().__init__()
             self.portlist: list[VPort] = []
             self.declared_instances: list[VInstance] = []
-    
+
     def to_dict(self):
-        return {
-            "name": str(self.name), 
+        return super().to_dict() | {
             "portlist": [port.to_dict() for port in self.portlist],
-            "declared_instances": [instance.name for instance in self.declared_instances]
+            "declared_instances": [
+                instance.uuid for instance in self.declared_instances
+            ],
         }
-        
+
 
 class VTop(VModule):
     """
@@ -322,25 +337,24 @@ class VTop(VModule):
     Params: 
         connection_list: List of connections this module should perform.
     """
+
     def __init__(
-            self,
-            connection_list: list[VConnection] = None,
-            io_ports: set[VPort] = None,
-            json_init: dict = None
+        self,
+        connection_list: list[VConnection] | None = None,
+        io_ports: set[VPort] | None = None,
+        json_init: dict | None = None,
     ):
         if json_init is None:
             self.connection_list: list[VConnection] = connection_list
             self.instances_set: set[VInstance] = set()
-            self.connection_map: dict[VInstance:list[VConnection]] = {}
+            self.connection_map: dict[VInstance : list[VConnection]] = {}
             self.port_list: list[VPort] = []
             self.io_ports: set[VPort] = io_ports
 
             self.module: VModule = VModule(None, 0)
             self.module.portlist = io_ports
             self.module.name = "top"
-            self.top_instance: VInstance = VInstance(
-                "top", self.module
-            )
+            self.top_instance: VInstance = VInstance("top", self.module)
 
             for connection in self.connection_list:
                 if connection.f_instance != None:
@@ -351,31 +365,35 @@ class VTop(VModule):
                 if connection.f_instance != None:
                     try:
                         self.connection_map[connection.f_instance].append(connection)
-                    except(KeyError):
+                    except KeyError:
                         self.connection_map[connection.f_instance] = [connection]
                 try:
                     self.connection_map[connection.t_instance].append(connection)
-                except(KeyError):
+                except KeyError:
                     self.connection_map[connection.t_instance] = [connection]
 
         else:
             self.connection_list = json_init["connection_list"]
-    
+
     def to_dict(self):
         connection_map_dict = {}
 
         for instance, connect_list in self.connection_map.items():
-            connection_map_dict[instance.name] = [connection.to_dict() for connection in connect_list]
+            connection_map_dict[instance.name] = [
+                connection.to_dict() for connection in connect_list
+            ]
 
         return {
-            "connection_list": [connection.to_dict() for connection in self.connection_list], 
-            "instances_set": [instance.to_dict() for instance in self.instances_set], 
-            "connection_map": connection_map_dict, 
+            "connection_list": [
+                connection.to_dict() for connection in self.connection_list
+            ],
+            "instances_set": [instance.to_dict() for instance in self.instances_set],
+            "connection_map": connection_map_dict,
             "port_list": [port.to_dict() for port in self.port_list],
             "io_ports": [port.to_dict() for port in self.io_ports],
-            "module": self.module.to_dict()
+            "module": self.module.to_dict(),
         }
-    
+
     def getPossibleConnections(self) -> list[str]:
         inputs_list = []
         outputs_list = []
@@ -385,53 +403,41 @@ class VTop(VModule):
             if port.type == PORT_TYPE.INPUT:
                 for instance in self.instances_set:
                     for iport in instance.module.portlist:
-                        if (iport.type == PORT_TYPE.INPUT) and (port.width == iport.width):
-                            inputs_list.append(
-                                VConnection(
-                                    port, 
-                                    iport, 
-                                    None, 
-                                    instance
-                                )
-                            )
+                        if (iport.type == PORT_TYPE.INPUT) and (
+                            port.width == iport.width
+                        ):
+                            inputs_list.append(VConnection(port, iport, None, instance))
             if port.type == PORT_TYPE.OUTPUT:
                 for instance in self.instances_set:
                     for iport in instance.module.portlist:
-                        if (iport.type == PORT_TYPE.OUTPUT) and (port.width == iport.width):
+                        if (iport.type == PORT_TYPE.OUTPUT) and (
+                            port.width == iport.width
+                        ):
                             outputs_list.append(
-                                VConnection(
-                                    port, 
-                                    iport, 
-                                    None, 
-                                    instance
-                                )
+                                VConnection(port, iport, None, instance)
                             )
             if port.type == PORT_TYPE.INOUT:
                 for instance in self.instances_set:
                     for iport in instance.module.portlist:
-                        if (iport.type == PORT_TYPE.INOUT) and (port.width == iport.width):
+                        if (iport.type == PORT_TYPE.INOUT) and (
+                            port.width == iport.width
+                        ):
                             inouots_list.append(
-                                VConnection(
-                                    port, 
-                                    iport, 
-                                    None, 
-                                    instance
-                                )
+                                VConnection(port, iport, None, instance)
                             )
-        
+
         for i_instance in self.instances_set:
             for i_port in i_instance.module.portlist:
                 if i_port.type == PORT_TYPE.INPUT:
                     for j_instance in self.instances_set:
                         for j_port in j_instance.module.portlist:
-                            if (j_port.type == PORT_TYPE.OUTPUT) and (i_port.width == j_port.width) and (j_instance.name != i_instance.name):
+                            if (
+                                (j_port.type == PORT_TYPE.OUTPUT)
+                                and (i_port.width == j_port.width)
+                                and (j_instance.name != i_instance.name)
+                            ):
                                 cross_list.append(
-                                    VConnection(
-                                        j_port, 
-                                        i_port,
-                                        j_instance,
-                                        i_instance
-                                    )
+                                    VConnection(j_port, i_port, j_instance, i_instance)
                                 )
                 # if i_port.type == PORT_TYPE.OUTPUT:
                 #     for j_instance in self.instances_set:
@@ -439,7 +445,7 @@ class VTop(VModule):
                 #             if j_port.type == PORT_TYPE.INPUT:
                 #                 cross_list.append(
                 #                     VConnection(
-                #                         i_port, 
+                #                         i_port,
                 #                         j_port,
                 #                         i_instance,
                 #                         j_instance
@@ -448,71 +454,85 @@ class VTop(VModule):
                 if i_port.type == PORT_TYPE.INOUT:
                     for j_instance in self.instances_set:
                         for j_port in j_instance.module.portlist:
-                            if (j_port.type == PORT_TYPE.INOUT) and (i_port.width == j_port.width) and (j_instance.name != i_instance.name):
+                            if (
+                                (j_port.type == PORT_TYPE.INOUT)
+                                and (i_port.width == j_port.width)
+                                and (j_instance.name != i_instance.name)
+                            ):
                                 cross_list.append(
-                                    VConnection(
-                                        i_port, 
-                                        j_port,
-                                        i_instance,
-                                        j_instance
-                                    )
+                                    VConnection(i_port, j_port, i_instance, j_instance)
                                 )
 
-        return (inputs_list + outputs_list + inouots_list + cross_list)
-            
-            
-    
+        return inputs_list + outputs_list + inouots_list + cross_list
+
     def getCurrentConnections(self) -> list[int]:
         cur_connect_names = [str(connection) for connection in self.connection_list]
         enabled_connections = [
-            1 if str(i) in cur_connect_names else 0 for i in self.getPossibleConnections()
+            1 if str(i) in cur_connect_names else 0
+            for i in self.getPossibleConnections()
         ]
 
         return enabled_connections
-    
+
     def setConnections(self, connections: list[int]) -> VTop:
         # connect_mapped_ports: dict[str:list[int]] = {}
         used_ports: set[str] = set()
         final_connects: list[VConnection] = []
-        connects_to_set = [i for i,j in enumerate(connections) if j==1]
+        connects_to_set = [i for i, j in enumerate(connections) if j == 1]
         all_connections: list[VConnection] = self.getPossibleConnections().copy()
         current_connections = self.getCurrentConnections().copy()
         new_connects = [all_connections[i] for i in connects_to_set]
-        
-        connect_diff = list(map(lambda a, b: a^b, connections, current_connections))
-        connect_diff_idx = [i for i,j in enumerate(connect_diff) if j==1]
+
+        connect_diff = list(map(lambda a, b: a ^ b, connections, current_connections))
+        connect_diff_idx = [i for i, j in enumerate(connect_diff) if j == 1]
         for connect_idx in connect_diff_idx:
             if all_connections[connect_idx].f_instance is not None:
-                if (f"{all_connections[connect_idx].f_instance.name}:{all_connections[connect_idx].f_port.name}" not in used_ports) and\
-                (f"{all_connections[connect_idx].t_instance.name}:{all_connections[connect_idx].t_port.name}" not in used_ports):
-                    used_ports.add(f"{all_connections[connect_idx].f_instance.name}:{all_connections[connect_idx].f_port.name}")
-                    used_ports.add(f"{all_connections[connect_idx].t_instance.name}:{all_connections[connect_idx].t_port.name}")
+                if (
+                    f"{all_connections[connect_idx].f_instance.name}:{all_connections[connect_idx].f_port.name}"
+                    not in used_ports
+                ) and (
+                    f"{all_connections[connect_idx].t_instance.name}:{all_connections[connect_idx].t_port.name}"
+                    not in used_ports
+                ):
+                    used_ports.add(
+                        f"{all_connections[connect_idx].f_instance.name}:{all_connections[connect_idx].f_port.name}"
+                    )
+                    used_ports.add(
+                        f"{all_connections[connect_idx].t_instance.name}:{all_connections[connect_idx].t_port.name}"
+                    )
                     final_connects.append(all_connections[connect_idx])
                 else:
                     print("FOUND AN ALREADY USED PORT ABOVE!")
             else:
-                if f"{all_connections[connect_idx].t_instance.name}:{all_connections[connect_idx].t_port.name}" not in used_ports:
-                    used_ports.add(f"{all_connections[connect_idx].t_instance.name}:{all_connections[connect_idx].t_port.name}")
+                if (
+                    f"{all_connections[connect_idx].t_instance.name}:{all_connections[connect_idx].t_port.name}"
+                    not in used_ports
+                ):
+                    used_ports.add(
+                        f"{all_connections[connect_idx].t_instance.name}:{all_connections[connect_idx].t_port.name}"
+                    )
                     final_connects.append(all_connections[connect_idx])
                 else:
                     print("FOUND AN ALREADY USED PORT ABOVE!")
-        
+
         for connect in new_connects:
             if connect.f_instance is not None:
-                if (f"{connect.f_instance.name}:{connect.f_port.name}" not in used_ports) and (f"{connect.t_instance.name}:{connect.t_port.name}" not in used_ports):
+                if (
+                    f"{connect.f_instance.name}:{connect.f_port.name}" not in used_ports
+                ) and (
+                    f"{connect.t_instance.name}:{connect.t_port.name}" not in used_ports
+                ):
                     final_connects.append(connect)
                     used_ports.add(f"{connect.f_instance.name}:{connect.f_port.name}")
                     used_ports.add(f"{connect.t_instance.name}:{connect.t_port.name}")
                 else:
                     print("FOUND AN ALREADY USED PORT!")
             else:
-                if f"{connect.t_instance.name}:{connect.t_port.name}" not in used_ports: 
+                if f"{connect.t_instance.name}:{connect.t_port.name}" not in used_ports:
                     final_connects.append(connect)
                     used_ports.add(f"{connect.t_instance.name}:{connect.t_port.name}")
                 else:
                     print("FOUND AN ALREADY USED PORT")
-
-
 
         # new_connects = current_connections
         # changed_connects = [i for i,j in enumerate(connect_diff) if j==1]
@@ -523,10 +543,9 @@ class VTop(VModule):
         #         new_connects.append(all_connections[idx])
         #         if all_connections[idx].f_instance is not None:
         #             for connect in current_connections:
-        #                 if 
+        #                 if
 
-
-            #transition 1 -> 0 case
+        # transition 1 -> 0 case
         print(f"------- New connects = --------\n{new_connects}")
         print(f"------ IO Ports -------\n{self.io_ports}")
         newVTop = VTop(final_connects, self.io_ports)
@@ -535,25 +554,23 @@ class VTop(VModule):
 
         # for change in connect_diff:
 
-
-        # TODO: We need to make sure this doesn't end up adding another 
-        # connection to a port that is already connected to something! 
+        # TODO: We need to make sure this doesn't end up adding another
+        # connection to a port that is already connected to something!
 
         return newVTop
-    
+
     # def makeDecomposedTopASTs(self):
     #     # Gather all wires that have their outputs alias to the same instance
     #     aliased_wire_map = {}
     #     for connection in self.connection_list:
     #         if (connection.f_instance is not None) and (connection.t_instance is not None):
-    #             try: 
+    #             try:
     #                 aliased_wire_map[connection.t_instance.name].append(connection)
     #             except KeyError:
     #                 aliased_wire_map[connection.t_instance.name] = [connection]
 
-
     #     # We can assume the inputs to those wires is a set of instances that compose
-    #     # a logical stage of some kind. 
+    #     # a logical stage of some kind.
 
     #     for instance_name, connect_list in aliased_wire_map.items():
     #         pruned_connect_list: list[VConnection] = self.connection_list.copy()
@@ -562,7 +579,7 @@ class VTop(VModule):
     #         # Remove wire connections
     #         for connection in connect_list:
     #             pruned_connect_list.remove(connection)
-            
+
     #         # Add new connections to top-level
     #         for connection in connect_list:
     #             pruned_connect_list.append(
@@ -573,9 +590,9 @@ class VTop(VModule):
     #                         connection.f_port.type,
     #                         None,
     #                         None
-    #                     ), 
-    #                     connection.f_port, 
-    #                     None, 
+    #                     ),
+    #                     connection.f_port,
+    #                     None,
     #                     connection.f_instance
     #                 )
     #             )
@@ -592,13 +609,11 @@ class VTop(VModule):
 
     #         # Remove unused top-level I/O ports
 
-
-
-    #     # Make a top module with the original inputs to that stage as top-level inputs, 
+    #     # Make a top module with the original inputs to that stage as top-level inputs,
     #     # and with the outputs that originally went to the wires remapped to top-level
     #     # outputs
     #     pass
-        
+
     def writeTop(self) -> vast.ModuleDef:
         """
         This writes out a ModuleDef in the PyVerilog AST format for eventually\
@@ -612,65 +627,67 @@ class VTop(VModule):
         print(self.instances_set)
 
         wires_to_make: set[VWire] = set()
-        reg_to_make: set[VReg] = set()  
+        reg_to_make: set[VReg] = set()
 
         for connection in self.connection_list:
             if connection.f_instance is not None:
                 wires_to_make.add(
                     VWire(
-                        (f"{connection.f_instance.name}_{connection.f_port.name}_to" +
-                            f"_{connection.t_instance.name}_{connection.t_port.name}"),
-                        connection.f_port.width, 
-                        None
+                        (
+                            f"{connection.f_instance.name}_{connection.f_port.name}_to"
+                            + f"_{connection.t_instance.name}_{connection.t_port.name}"
+                        ),
+                        connection.f_port.width,
+                        None,
                     )
                 )
 
         instanceLists: list[vast.InstanceList] = []
         for instance in self.instances_set:
             vast_inst: vast.Instance = vast.Instance(
-                instance.module.name, 
-                instance.name, 
+                instance.module.name,
+                instance.name,
                 [
                     vast.PortArg(
-                    argname=vast.Identifier(
-                        connection.f_port.name 
-                        if 
-                        connection.f_instance == None
-                        else 
-                        (f"{connection.f_instance.name}_{connection.f_port.name}_to" +
-                        f"_{connection.t_instance.name}_{connection.t_port.name}")), 
-                    portname= 
-                        connection.f_port.name
+                        argname=vast.Identifier(
+                            connection.f_port.name
+                            if connection.f_instance == None
+                            else (
+                                f"{connection.f_instance.name}_{connection.f_port.name}_to"
+                                + f"_{connection.t_instance.name}_{connection.t_port.name}"
+                            )
+                        ),
+                        portname=connection.f_port.name
                         if (
-                            (connection.f_instance is not None) 
-                            and 
-                            (connection.f_instance.name == instance.name)
+                            (connection.f_instance is not None)
+                            and (connection.f_instance.name == instance.name)
                         )
-                        else connection.t_port.name
-                    ) for connection in self.connection_map[instance]
+                        else connection.t_port.name,
+                    )
+                    for connection in self.connection_map[instance]
                 ],
-                None
+                None,
             )
             instanceLists.append(
-                vast.InstanceList(
-                    instance.module.name, 
-                    [], 
-                    [vast_inst]
-                )
+                vast.InstanceList(instance.module.name, [], [vast_inst])
             )
 
         w_wires_list: list[vast.Wire] = [
-            vast.Wire(wire.name, 
-                vast.Width(vast.IntConst(str(wire.width-1)),(vast.IntConst('0')))
-            ) for wire in wires_to_make
+            vast.Wire(
+                wire.name,
+                vast.Width(vast.IntConst(str(wire.width - 1)), (vast.IntConst("0"))),
+            )
+            for wire in wires_to_make
         ]
 
-        monitors_list: list[tuple[VPort, VPort]] = [] 
+        monitors_list: list[tuple[VPort, VPort]] = []
 
         w_reg_list: list[vast.Reg] = [
-            vast.Reg(reg.name, 
-                vast.Width(vast.IntConst(str(reg.width-1)), vast.IntConst('0'))
-            ) for reg in reg_to_make
+            vast.Reg(
+                reg.name,
+                vast.Width(vast.IntConst(str(reg.width - 1)), vast.IntConst("0")),
+            )
+            for reg in reg_to_make
         ]
 
         itemlist.append(vast.Decl(w_wires_list + w_reg_list))
@@ -678,26 +695,26 @@ class VTop(VModule):
             itemlist.append(instanceL)
 
         monitor_ports: set[VPort] = set()
-        
-        for instance in self.instances_set: 
+
+        for instance in self.instances_set:
             print(f"Instance = {instance}")
             for port in instance.module.portlist:
                 if ("clk" not in port.name) and ("reset" not in port.name):
                     if port.type == PORT_TYPE.INPUT:
-                        for connection in self.connection_map[instance]: 
-                            if (port.name == connection.t_port.name) and (instance.name == connection.t_instance.name):
-                                if connection.f_instance is None: 
+                        for connection in self.connection_map[instance]:
+                            if (port.name == connection.t_port.name) and (
+                                instance.name == connection.t_instance.name
+                            ):
+                                if connection.f_instance is None:
                                     print(f"Matched port {port.name} with {connection}")
                                     monitor_port = VPort(
-                                            str(f"{instance.name}_{port.name}_monitor"), 
-                                            port.width, 
-                                            PORT_TYPE.OUTPUT,
-                                            None, 
-                                            len(self.io_ports)+len(monitor_ports)
-                                        )
-                                    monitor_ports.add(
-                                        monitor_port
+                                        str(f"{instance.name}_{port.name}_monitor"),
+                                        port.width,
+                                        PORT_TYPE.OUTPUT,
+                                        None,
+                                        len(self.io_ports) + len(monitor_ports),
                                     )
+                                    monitor_ports.add(monitor_port)
                                     monitors_list.append(
                                         (monitor_port.name, connection.f_port.name)
                                     )
@@ -705,54 +722,60 @@ class VTop(VModule):
                                 else:
                                     print(f"Matched port {port.name} with {connection}")
                                     monitor_port = VPort(
-                                            str(f"{instance.name}_{port.name}_monitor"), 
-                                            port.width, 
-                                            PORT_TYPE.OUTPUT,
-                                            None, 
-                                            len(self.io_ports)+len(monitor_ports)
-                                        )
-                                    monitor_ports.add(
-                                        monitor_port
+                                        str(f"{instance.name}_{port.name}_monitor"),
+                                        port.width,
+                                        PORT_TYPE.OUTPUT,
+                                        None,
+                                        len(self.io_ports) + len(monitor_ports),
                                     )
+                                    monitor_ports.add(monitor_port)
                                     monitors_list.append(
-                                        (monitor_port.name, 
-                                         str(f"{connection.f_instance.name}_{connection.f_port.name}_to_{connection.t_instance.name}_{connection.t_port.name}"))
+                                        (
+                                            monitor_port.name,
+                                            str(
+                                                f"{connection.f_instance.name}_{connection.f_port.name}_to_{connection.t_instance.name}_{connection.t_port.name}"
+                                            ),
+                                        )
                                     )
                                     print(monitors_list[-1])
                     else:
-                        for connection in self.connection_map[instance]: 
+                        for connection in self.connection_map[instance]:
                             if connection.f_instance is not None:
-                                if (port.name == connection.f_port.name) and (instance.name == connection.f_instance.name):
+                                if (port.name == connection.f_port.name) and (
+                                    instance.name == connection.f_instance.name
+                                ):
                                     print(f"Matched port {port.name} with {connection}")
                                     monitor_port = VPort(
-                                            str(f"{instance.name}_{port.name}_monitor"), 
-                                            port.width, 
-                                            PORT_TYPE.OUTPUT,
-                                            None, 
-                                            len(self.io_ports)+len(monitor_ports)
-                                        )
-                                    monitor_ports.add(
-                                        monitor_port
+                                        str(f"{instance.name}_{port.name}_monitor"),
+                                        port.width,
+                                        PORT_TYPE.OUTPUT,
+                                        None,
+                                        len(self.io_ports) + len(monitor_ports),
                                     )
+                                    monitor_ports.add(monitor_port)
                                     monitors_list.append(
-                                        (monitor_port.name, 
-                                         str(f"{connection.f_instance.name}_{connection.f_port.name}_to_{connection.t_instance.name}_{connection.t_port.name}"))
+                                        (
+                                            monitor_port.name,
+                                            str(
+                                                f"{connection.f_instance.name}_{connection.f_port.name}_to_{connection.t_instance.name}_{connection.t_port.name}"
+                                            ),
+                                        )
                                     )
                                     print(monitors_list[-1])
                             else:
-                                # This is the case for the final output in the design, 
-                                # which doesn't require the monitor output since we already 
-                                # have top-level visibility 
+                                # This is the case for the final output in the design,
+                                # which doesn't require the monitor output since we already
+                                # have top-level visibility
                                 pass
 
         for monitor_assign in monitors_list:
             itemlist.append(
                 vast.Assign(
-                    vast.Identifier(monitor_assign[0]), 
-                    vast.Identifier(monitor_assign[1])
+                    vast.Identifier(monitor_assign[0]),
+                    vast.Identifier(monitor_assign[1]),
                 )
             )
-        
+
         w_portslist = []
         for port in list(list(self.io_ports) + list(monitor_ports)):
             if port.type == PORT_TYPE.INPUT:
@@ -761,7 +784,7 @@ class VTop(VModule):
                         vast.Input(
                             port.name,
                             vast.Width(
-                                vast.IntConst(str(port.width-1)), vast.IntConst('0')
+                                vast.IntConst(str(port.width - 1)), vast.IntConst("0")
                             ),
                         )
                     )
@@ -772,7 +795,7 @@ class VTop(VModule):
                         vast.Output(
                             port.name,
                             vast.Width(
-                                vast.IntConst(str(port.width-1)), vast.IntConst('0')
+                                vast.IntConst(str(port.width - 1)), vast.IntConst("0")
                             ),
                         )
                     )
@@ -783,7 +806,7 @@ class VTop(VModule):
                         vast.Inout(
                             port.name,
                             vast.Width(
-                                vast.IntConst(str(port.width-1)), vast.IntConst('0')
+                                vast.IntConst(str(port.width - 1)), vast.IntConst("0")
                             ),
                         )
                     )
@@ -791,7 +814,8 @@ class VTop(VModule):
 
         portlist = vast.Portlist(w_portslist)
 
-        ast_module: vast.ModuleDef = vast.ModuleDef("top", paramlist, portlist, itemlist)
+        ast_module: vast.ModuleDef = vast.ModuleDef(
+            "top", paramlist, portlist, itemlist
+        )
 
         return ast_module
-
