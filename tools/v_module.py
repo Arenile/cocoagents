@@ -226,16 +226,17 @@ class VConnection(VComponent):
             super().__init__()
             self.f_port: VWire | VPort | VReg | None = f_port
             self.t_port: VWire | VPort | VReg | None = t_port
-            self.f_instance: VInstance | None = f_instance
-            self.t_instance: VInstance | None = t_instance
+            self.f_instance: VInstance | uuid.UUID | None = f_instance
+            self.t_instance: VInstance | uuid.UUID | None = t_instance
         else:
             super().__init__()
+            print(f"---- VPORT IN INIT ----\n{json_init}")
             self.f_port = VPort(json_init=json_init["f_port"])
             self.t_port = VPort(json_init=json_init["t_port"])
             if json_init["f_instance"] != "None":
-                self.f_instance = VInstance(json_init=json_init["f_instance"])
+                self.f_instance: uuid.UUID = json_init["f_instance"]
             if json_init["t_instance"] != "None":
-                self.t_instance = VInstance(json_init=json_init["t_instance"])
+                self.t_instance: uuid.UUID = json_init["t_instance"]
 
     def to_dict(self):
         return super().to_dict() | {
@@ -373,7 +374,18 @@ class VTop(VModule):
                     self.connection_map[connection.t_instance] = [connection]
 
         else:
-            self.connection_list = json_init["connection_list"]
+            print(
+                f"---- connection_list LOOKS LIKE ----\n{json_init['connection_list']}"
+            )
+            self.connection_list = [
+                VConnection(json_init=connection)
+                for connection in json_init["connection_list"]
+            ]
+            self.connection_map = json_init["connection_map"]
+            self.instances_set = json_init["instances_set"]
+            self.port_list = json_init["port_list"]
+            self.io_ports = json_init["io_ports"]
+            self.module = json_init["module"]
 
     def to_dict(self):
         connection_map_dict = {}
