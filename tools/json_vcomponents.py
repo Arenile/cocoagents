@@ -15,7 +15,7 @@ class VComponent:
         self.uuid: UUID = uuid4() if uuid is None else uuid
 
     @abstractmethod
-    def toDict(self) -> dict[str, str | int]:
+    def toDict(self) -> dict[str, str | int | list]:
         return {"name": self.name, "uuid": self.uuid.int}
 
 
@@ -25,7 +25,7 @@ class VInternal(VComponent):
         name: str = "",
         width: int = 0,
         v_module: UUID | None = None,
-        json_init: dict[str, str | int] | None = None,
+        json_init: dict[str, str | int | list] | None = None,
     ):
         if json_init is None:
             super().__init__(name=name)
@@ -51,10 +51,10 @@ class VInternal(VComponent):
             )
 
     @abstractmethod
-    def toDict(self) -> dict[str, str | int]:
+    def toDict(self) -> dict[str, str | int | list]:
         return super().toDict() | {
             "width": self.width,
-            "v_module": self.uuid if self.uuid is not None else 0,
+            "v_module": self.v_module.int if self.v_module is not None else 0,
         }
 
 
@@ -66,7 +66,7 @@ class VPort(VComponent):
         port_type: PORT_TYPE = PORT_TYPE.INPUT,
         v_module: UUID | None = None,
         port_idx: int = -1,
-        json_init: dict[str, str | int] | None = None,
+        json_init: dict[str, str | int | list] | None = None,
     ):
         if json_init is None:
             super().__init__(name=name)
@@ -104,7 +104,7 @@ class VPort(VComponent):
                 json_init["port_idx"] if isinstance(json_init["port_idx"], int) else -1
             )
 
-    def toDict(self) -> dict[str, str | int]:
+    def toDict(self) -> dict[str, str | int | list]:
         return super().toDict() | {
             "port_width": self.port_width,
             "port_type": self.port_type.name,
@@ -119,11 +119,11 @@ class VReg(VInternal):
         name: str = "",
         width: int = 0,
         v_module: UUID | None = None,
-        json_init: dict[str, str | int] | None = None,
+        json_init: dict[str, str | int | list] | None = None,
     ):
         super().__init__(name=name, width=width, v_module=v_module, json_init=json_init)
 
-    def toDict(self) -> dict[str, str | int]:
+    def toDict(self) -> dict[str, str | int | list]:
         return super().toDict()
 
 
@@ -133,11 +133,11 @@ class VWire(VInternal):
         name: str = "",
         width: int = 0,
         v_module: UUID | None = None,
-        json_init: dict[str, str | int] | None = None,
+        json_init: dict[str, str | int | list] | None = None,
     ):
         super().__init__(name=name, width=width, v_module=v_module, json_init=json_init)
 
-    def toDict(self) -> dict[str, str | int]:
+    def toDict(self) -> dict[str, str | int | list]:
         return super().toDict()
 
 
@@ -170,7 +170,7 @@ class VInstance(VComponent):
             else:
                 self.v_module = UUID(int=json_init["v_module"])
 
-    def toDict(self) -> dict[str, str | int]:
+    def toDict(self) -> dict[str, str | int | list]:
         return super().toDict() | {"v_module": self.v_module.int}
 
 
@@ -228,3 +228,24 @@ class VModule(VComponent):
                     raise TypeError(
                         f"DECLARED INSTANCE LIST OF {self.name} MODULE CONTAINED INVALID ENTRY"
                     )
+
+    def toDict(self) -> dict[str, str | int | list]:
+        return super().toDict() | {
+            "mod_idx": self.mod_idx,
+            "portlist": [port_uuid.int for port_uuid in self.portlist],
+            "declared_instances": [
+                instance_uuid.int for instance_uuid in self.declared_instances
+            ],
+        }
+
+    def addPort(self, p_uuid: UUID) -> int:
+        """
+        Adds a port UUID to the portlist for this module.
+
+        Params:
+            p_uuid: The UUID of the port to add
+
+        Returns: The number of ports in the module after the addition of the new port.
+        """
+        self.portlist.append(p_uuid)
+        return len(self.portlist)
