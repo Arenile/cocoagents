@@ -1,4 +1,12 @@
-from json_vcomponents import VComponent
+from json_vcomponents import (
+    COMPONENT_TYPE,
+    VComponent,
+    VInstance,
+    VModule,
+    VPort,
+    VReg,
+    VWire,
+)
 from uuid import UUID
 from enum import Enum
 import pyverilog.vparser.ast as vast
@@ -15,14 +23,26 @@ class VCompDatabaseView:
     for designing a device.
     """
 
-    def __init__(self, comp_list: dict[UUID, VComponent] = {}):
-        self.comp_list: dict[UUID, VComponent] = comp_list
+    def __init__(self):
+        self.comp_list: dict[UUID, dict[str, str | int | list]] = {}
 
-    def getComp(self, uuid: UUID) -> VComponent:
-        return self.comp_list[uuid]
+    def getComp(self, uuid: UUID):
+        match self.comp_list[uuid]["comp_type"]:
+            case COMPONENT_TYPE.REG.name:
+                return VReg(json_init=self.comp_list[uuid])
+            case COMPONENT_TYPE.MODULE.name:
+                return VModule(json_init=self.comp_list[uuid])
+            case COMPONENT_TYPE.WIRE.name:
+                return VWire(json_init=self.comp_list[uuid])
+            case COMPONENT_TYPE.PORT.name:
+                return VPort(json_init=self.comp_list[uuid])
+            case COMPONENT_TYPE.INSTANCE.name:
+                return VInstance(json_init=self.comp_list[uuid])
+            case _:
+                return VComponent()
 
     def addComp(self, new_comp: VComponent) -> UUID:
-        self.comp_list[new_comp.uuid] = new_comp
+        self.comp_list[new_comp.uuid] = new_comp.toDict()
 
         return new_comp.uuid
 

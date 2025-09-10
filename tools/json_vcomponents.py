@@ -9,14 +9,28 @@ class PORT_TYPE(Enum):
     INOUT = 2
 
 
+class COMPONENT_TYPE(Enum):
+    COMPONENT = 0
+    PORT = 1
+    REG = 2
+    WIRE = 3
+    INSTANCE = 4
+    MODULE = 5
+
+
 class VComponent:
     def __init__(self, name: str | None = None, uuid: UUID | None = None) -> None:
         self.name: str = name if isinstance(name, str) else ""
         self.uuid: UUID = uuid4() if uuid is None else uuid
+        self.comp_type: COMPONENT_TYPE = COMPONENT_TYPE.COMPONENT
 
     @abstractmethod
     def toDict(self) -> dict[str, str | int | list]:
-        return {"name": self.name, "uuid": self.uuid.int}
+        return {
+            "uuid": self.uuid.int,
+            "name": self.name,
+            "comp_type": self.comp_type.name,
+        }
 
 
 class VInternal(VComponent):
@@ -103,6 +117,7 @@ class VPort(VComponent):
             self.port_idx: int = (
                 json_init["port_idx"] if isinstance(json_init["port_idx"], int) else -1
             )
+        self.comp_type: COMPONENT_TYPE = COMPONENT_TYPE.PORT
 
     def toDict(self) -> dict[str, str | int | list]:
         return super().toDict() | {
@@ -122,6 +137,7 @@ class VReg(VInternal):
         json_init: dict[str, str | int | list] | None = None,
     ):
         super().__init__(name=name, width=width, v_module=v_module, json_init=json_init)
+        self.comp_type: COMPONENT_TYPE = COMPONENT_TYPE.REG
 
     def toDict(self) -> dict[str, str | int | list]:
         return super().toDict()
@@ -136,6 +152,7 @@ class VWire(VInternal):
         json_init: dict[str, str | int | list] | None = None,
     ):
         super().__init__(name=name, width=width, v_module=v_module, json_init=json_init)
+        self.comp_type: COMPONENT_TYPE = COMPONENT_TYPE.WIRE
 
     def toDict(self) -> dict[str, str | int | list]:
         return super().toDict()
@@ -169,6 +186,7 @@ class VInstance(VComponent):
                 )
             else:
                 self.v_module = UUID(int=json_init["v_module"])
+        self.comp_type: COMPONENT_TYPE = COMPONENT_TYPE.INSTANCE
 
     def toDict(self) -> dict[str, str | int | list]:
         return super().toDict() | {"v_module": self.v_module.int}
@@ -228,6 +246,7 @@ class VModule(VComponent):
                     raise TypeError(
                         f"DECLARED INSTANCE LIST OF {self.name} MODULE CONTAINED INVALID ENTRY"
                     )
+        self.comp_type: COMPONENT_TYPE = COMPONENT_TYPE.MODULE
 
     def toDict(self) -> dict[str, str | int | list]:
         return super().toDict() | {
