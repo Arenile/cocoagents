@@ -4,7 +4,7 @@ import json_vcomponents
 if __name__ == "__main__":
     # VPort TEST ################################
 
-    print("======== NOW DOING PORT TEST ========")
+    print("\n======== NOW DOING PORT TEST ========")
 
     testVPort = json_vcomponents.VPort(
         name="Test",
@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     # VModule TEST ###############################
 
-    print("======== NOW DOING MODULE TEST ========")
+    print("\n======== NOW DOING MODULE TEST ========")
 
     testModule = json_vcomponents.VModule(name="TestModule", portlist=[testVPort.uuid])
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     # VReg TEST ##################################
 
-    print("======== NOW DOING REG TEST ========")
+    print("\n======== NOW DOING REG TEST ========")
 
     testVReg = json_vcomponents.VReg(name="TestReg", width=1, v_module=testModule.uuid)
     test_vreg_dict = testVReg.toDict()
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     # VWire TEST #################################
 
-    print("======== NOW DOING WIRE TEST ========")
+    print("\n======== NOW DOING WIRE TEST ========")
 
     testVWire = json_vcomponents.VWire(
         name="TestWire", width=1, v_module=testModule.uuid
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # VInstance TEST #############################
 
-    print("======== NOW DOING INSTANCE TEST ========")
+    print("\n======== NOW DOING INSTANCE TEST ========")
 
     testVInst = json_vcomponents.VInstance(
         name="Test Instance", v_module=testModule.uuid

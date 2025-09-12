@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from uuid import UUID, uuid4
 from enum import Enum
+import pyverilog.vparser.ast as vast
 
 
 class PORT_TYPE(Enum):
@@ -268,3 +269,40 @@ class VModule(VComponent):
         """
         self.portlist.append(p_uuid)
         return len(self.portlist)
+
+
+def make_v_module_from_ast(ast_input: vast.Source, mod_idx: int = 0) -> VModule:
+    working_mod: vast.ModuleDef = ast_input.children()[0].children()[mod_idx]
+    working_ports_list: tuple[vast.Ioport] = working_mod.portlist.children()
+
+    w_portlist: list[VPort] = []
+    # w_dec_instances: list[VInstance] = []
+
+    new_vmodule: VModule = VModule()
+
+    for wport_idx, wport in enumerate(working_ports_list):
+        wport_type: PORT_TYPE = PORT_TYPE.INPUT
+        wport_width: int = 1
+
+        if isinstance(wport.first, vast.Output):
+            wport_type = PORT_TYPE.OUTPUT
+        elif isinstance(wport.first, vast.Inout):
+            wport_type = PORT_TYPE.INOUT
+
+        if isinstance(wport.first.width, vast.Width):
+            wport_width = (
+                int(wport.first.width.msb.value) - int(wport.first.width.lsb.value) + 1
+            )
+
+        w_portlist.append(
+            VPort(
+                wport.first.name, wport_width, wport_type, new_vmodule.uuid, wport_idx
+            )
+        )
+
+    # TODO: Eventually handle the instnaces that might be declared within a module being initialized as well
+
+    for port in w_portlist:
+        new_vmodule.addPort(port.uuid)
+
+    return new_vmodule
