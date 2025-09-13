@@ -1,6 +1,14 @@
 from typing import Any
-from json_vcomponents import PORT_TYPE, VInstance, VModule, VPort, VComponent, VWire
-from uuid import UUID, uuid4
+from json_vcomponents import (
+    PORT_TYPE,
+    VConnection,
+    VInstance,
+    VModule,
+    VPort,
+    VComponent,
+    VWire,
+)
+from uuid import UUID
 from vcomp_database import VCompDatabaseView
 import pyverilog.vparser.ast as vast
 
@@ -21,82 +29,73 @@ def count_mods_in_source(ast_source: vast.Source) -> int:
         return 1
 
 
-class VConnection:
-    def __init__(self, json_init: dict[str, int]) -> None:
-        """
-        Initialize with a dictionary of the form:
-        {
-            "f_instance": UUID,
-            "t_instance": UUID,
-            "f_port": UUID,
-            "t_port": UUID
-        }
-        """
-        self.f_instance: UUID | None = (
-            UUID(int=json_init["f_instance"])
-            if (
-                isinstance(json_init["f_instance"], int)
-                and (json_init["f_instance"] != 0)
-            )
-            else None
+def format_connection(connection: VConnection, dbase: VCompDatabaseView) -> str:
+    """
+    Returns a connection formatted as a string from object names instead of UUIDs
+    """
+    connect_string = ""
+    if connection.f_instance is not None:
+        conn_f_inst: Any = dbase.getComp(connection.f_instance)
+        connect_string += (
+            f"{conn_f_inst.name}_" if isinstance(conn_f_inst, VInstance) else ""
         )
-        self.t_instance: UUID | None = (
-            UUID(int=json_init["t_instance"])
-            if (
-                isinstance(json_init["t_instance"], int)
-                and (json_init["t_instance"] != 0)
-            )
-            else None
+    if connection.f_port is not None:
+        conn_f_port: Any = dbase.getComp(connection.f_port)
+        connect_string += (
+            f"{conn_f_port.name}_to" if isinstance(conn_f_port, VPort) else ""
         )
-        self.f_port: UUID | None = (
-            UUID(int=json_init["f_port"])
-            if isinstance(json_init["f_port"], int)
-            else None
+    if connection.t_instance is not None:
+        conn_t_inst: Any = dbase.getComp(connection.t_instance)
+        connect_string += (
+            f"_{conn_t_inst.name}" if isinstance(conn_t_inst, VInstance) else ""
         )
-        self.t_port: UUID | None = (
-            UUID(int=json_init["t_port"])
-            if isinstance(json_init["t_port"], int)
-            else None
+    if connection.t_port is not None:
+        conn_t_port: Any = dbase.getComp(connection.t_port)
+        connect_string += (
+            f"_{conn_t_port.name}" if isinstance(conn_t_port, VPort) else ""
         )
-        try:
-            self.uuid: UUID = (
-                UUID(int=json_init["uuid"])
-                if isinstance(json_init["uuid"], int)
-                else uuid4()
-            )
-        except KeyError:
-            self.uuid: UUID = uuid4()
 
-    def __repr__(self) -> str:
-        return f"CONNECTION:{self.uuid}={self.f_instance}_{self.f_port}_to_{self.t_instance}_{self.t_port}"
+    return connect_string
 
-    def format_connection(self, dbase: VCompDatabaseView) -> str:
-        """
-        Returns a connection formatted as a string from object names instead of UUIDs
-        """
-        connect_string = ""
-        if self.f_instance is not None:
-            conn_f_inst: Any = dbase.getComp(self.f_instance)
-            connect_string += (
-                f"{conn_f_inst.name}_" if isinstance(conn_f_inst, VInstance) else ""
-            )
-        if self.f_port is not None:
-            conn_f_port: Any = dbase.getComp(self.f_port)
-            connect_string += (
-                f"{conn_f_port.name}_to" if isinstance(conn_f_port, VPort) else ""
-            )
-        if self.t_instance is not None:
-            conn_t_inst: Any = dbase.getComp(self.t_instance)
-            connect_string += (
-                f"_{conn_t_inst.name}" if isinstance(conn_t_inst, VInstance) else ""
-            )
-        if self.t_port is not None:
-            conn_t_port: Any = dbase.getComp(self.t_port)
-            connect_string += (
-                f"_{conn_t_port.name}" if isinstance(conn_t_port, VPort) else ""
+
+def make_v_module_from_ast(
+    ast_input: vast.Source, dbaseinst: VCompDatabaseView, mod_idx: int = 0
+) -> VModule:
+    working_mod: vast.ModuleDef = ast_input.children()[0].children()[mod_idx]
+    working_ports_list: tuple[vast.Ioport] = working_mod.portlist.children()
+
+    w_portlist: list[VPort] = []
+    # w_dec_instances: list[VInstance] = []
+
+    new_vmodule: VModule = VModule()
+
+    for wport_idx, wport in enumerate(working_ports_list):
+        wport_type: PORT_TYPE = PORT_TYPE.INPUT
+        wport_width: int = 1
+
+        if isinstance(wport.first, vast.Output):
+            wport_type = PORT_TYPE.OUTPUT
+        elif isinstance(wport.first, vast.Inout):
+            wport_type = PORT_TYPE.INOUT
+
+        if isinstance(wport.first.width, vast.Width):
+            wport_width = (
+                int(wport.first.width.msb.value) - int(wport.first.width.lsb.value) + 1
             )
 
-        return connect_string
+        w_portlist.append(
+            VPort(
+                wport.first.name, wport_width, wport_type, new_vmodule.uuid, wport_idx
+            )
+        )
+
+    # TODO: Eventually handle the instnaces that might be declared within a module being initialized as well
+
+    for port in w_portlist:
+        new_vmodule.addPort(port.uuid)
+        dbaseinst.addComp(port)
+
+    return new_vmodule
 
 
 class VDesign:
@@ -110,6 +109,7 @@ class VDesign:
         self.connection_map: dict[UUID, VConnection] = {}
         for connection in connections:
             connect_obj: Any = dbaseview.getComp(uuid=connection)
+            print("!!!GOT A UUID!!!")
             if isinstance(connect_obj, VConnection):
                 self.connection_map[connection] = connect_obj
 
@@ -118,6 +118,14 @@ class VDesign:
             port_obj: VComponent = dbaseview.getComp(uuid=port)
             if isinstance(port_obj, VPort):
                 self.io_port_map[port] = port_obj
+
+    def toDict(self) -> dict[str, str | int | list]:
+        return {
+            "io_ports": [port.uuid for _, port in self.io_port_map.items()],
+            "connections": [
+                connection.uuid for _, connection in self.connection_map.items()
+            ],
+        }
 
     def makeAST(self) -> vast.ModuleDef:
         vast_paramlist = []
@@ -273,7 +281,7 @@ class VDesign:
                             and isinstance(conn_f_port, VPort)
                             and isinstance(conn_t_port, VPort)
                         ):
-                            vast_argname = connection.format_connection(self.dbase)
+                            vast_argname = format_connection(connection, self.dbase)
                             if conn_f_inst.name == inst.name:
                                 vast_portname = conn_f_port.name
                             else:
@@ -296,7 +304,14 @@ class VDesign:
                 )
             )
 
-        vast_itemlist = vast_wires + vast_instances
+        vast_itemlist.append(vast.Decl(vast_wires))
+
+        print(f"VAST WIRES = {vast_wires}")
+
+        for instancel in vast_instances:
+            vast_itemlist.append(instancel)
+
+        vast_portslist = vast.Portlist(vast_portslist)
 
         ast_module: vast.ModuleDef = vast.ModuleDef(
             "top", vast_paramlist, vast_portslist, vast_itemlist

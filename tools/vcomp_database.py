@@ -1,6 +1,7 @@
 from json_vcomponents import (
     COMPONENT_TYPE,
     VComponent,
+    VConnection,
     VInstance,
     VModule,
     VPort,
@@ -38,6 +39,8 @@ class VCompDatabaseView:
                 return VPort(json_init=self.comp_list[uuid])
             case COMPONENT_TYPE.INSTANCE.name:
                 return VInstance(json_init=self.comp_list[uuid])
+            case COMPONENT_TYPE.CONNECTION.name:
+                return VConnection(json_init=self.comp_list[uuid])
             case _:
                 return VComponent()
 
@@ -45,6 +48,11 @@ class VCompDatabaseView:
         self.comp_list[new_comp.uuid] = new_comp.toDict()
 
         return new_comp.uuid
+
+    #    def addConnection(self, new_conn: VConnection) -> UUID:
+    #        self.comp_list[new_conn.uuid] = new_conn.toDict()
+    #
+    #        return new_conn.uuid
 
     def setRemote(self, api_key: str):
         self.remote_api_key: str = api_key

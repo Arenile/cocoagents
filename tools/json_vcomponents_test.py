@@ -1,10 +1,16 @@
 from typing import Any
 from uuid import uuid4
 
+from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 from pyverilog.vparser.parser import parse
 import json_vcomponents
 from vcomp_database import VCompDatabaseView
-from vconnections import VConnection, VDesign, count_mods_in_source
+from vconnections import (
+    VConnection,
+    VDesign,
+    count_mods_in_source,
+    make_v_module_from_ast,
+)
 
 if __name__ == "__main__":
     # VPort TEST ################################
@@ -106,8 +112,10 @@ if __name__ == "__main__":
 
     vermod_list: list[json_vcomponents.VModule] = []
 
+    vcompdbase: VCompDatabaseView = VCompDatabaseView()
+
     for vermod_idx in range(count_mods_in_source(extop_ast)):
-        vermod_list.append(json_vcomponents.VModule(extop_ast, vermod_idx))
+        vermod_list.append(make_v_module_from_ast(extop_ast, vcompdbase, vermod_idx))
 
     io_ports: dict[str, json_vcomponents.VPort] = {
         "a_port": json_vcomponents.VPort(
@@ -143,8 +151,6 @@ if __name__ == "__main__":
         "mux1", vermod_list[2].uuid
     )
 
-    vcompdbase: VCompDatabaseView = VCompDatabaseView()
-
     [vcompdbase.addComp(vermod) for vermod in vermod_list]
 
     io_connections: list[VConnection] = []
@@ -164,112 +170,106 @@ if __name__ == "__main__":
             and isinstance(sub_module, json_vcomponents.VModule)
             and isinstance(mux_module, json_vcomponents.VModule)
         ):
+            print(f"Portlist of add_module = {add_module.portlist}")
             io_connections: list[VConnection] = [
                 VConnection(
-                    {
-                        "f_port": io_ports["a_port"].uuid.int,
-                        "t_port": add_module.portlist[2].int,
-                        "f_instance": 0,
-                        "t_instance": add_instance.uuid.int,
-                    }
+                    f_port=io_ports["a_port"].uuid,
+                    t_port=add_module.portlist[2],
+                    f_instance=None,
+                    t_instance=add_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["b_port"].uuid.int,
-                        "t_port": add_module.portlist[3].int,
-                        "f_instance": 0,
-                        "t_instance": add_instance.uuid.int,
-                    }
+                    f_port=io_ports["b_port"].uuid,
+                    t_port=add_module.portlist[3],
+                    f_instance=None,
+                    t_instance=add_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["clk_port"].uuid.int,
-                        "t_port": add_module.portlist[0].int,
-                        "f_instance": 0,
-                        "t_instance": add_instance.uuid.int,
-                    }
+                    f_port=io_ports["clk_port"].uuid,
+                    t_port=add_module.portlist[0],
+                    f_instance=None,
+                    t_instance=add_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["rst_port"].uuid.int,
-                        "t_port": add_module.portlist[1].int,
-                        "f_instance": 0,
-                        "t_instance": add_instance.uuid.int,
-                    }
+                    f_port=io_ports["rst_port"].uuid,
+                    t_port=add_module.portlist[1],
+                    f_instance=None,
+                    t_instance=add_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["a_port"].uuid.int,
-                        "t_port": sub_module.portlist[2].int,
-                        "f_instance": 0,
-                        "t_instance": sub_instance.uuid.int,
-                    }
+                    f_port=io_ports["a_port"].uuid,
+                    t_port=sub_module.portlist[2],
+                    f_instance=None,
+                    t_instance=sub_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["c_port"].uuid.int,
-                        "t_port": sub_module.portlist[3].int,
-                        "f_instance": 0,
-                        "t_instance": sub_instance.uuid.int,
-                    }
+                    f_port=io_ports["c_port"].uuid,
+                    t_port=sub_module.portlist[3],
+                    f_instance=None,
+                    t_instance=sub_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["clk_port"].uuid.int,
-                        "t_port": sub_module.portlist[0].int,
-                        "f_instance": 0,
-                        "t_instance": sub_instance.uuid.int,
-                    }
+                    f_port=io_ports["clk_port"].uuid,
+                    t_port=sub_module.portlist[0],
+                    f_instance=None,
+                    t_instance=sub_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["rst_port"].uuid.int,
-                        "t_port": sub_module.portlist[1].int,
-                        "f_instance": 0,
-                        "t_instance": sub_instance.uuid.int,
-                    }
+                    f_port=io_ports["rst_port"].uuid,
+                    t_port=sub_module.portlist[1],
+                    f_instance=None,
+                    t_instance=sub_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["s_port"].uuid.int,
-                        "t_port": mux_module.portlist[2].int,
-                        "f_instance": 0,
-                        "t_instance": mux_instance.uuid.int,
-                    }
+                    f_port=io_ports["s_port"].uuid,
+                    t_port=mux_module.portlist[2],
+                    f_instance=None,
+                    t_instance=mux_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": io_ports["out_port"].uuid.int,
-                        "t_port": mux_module.portlist[3].int,
-                        "f_instance": 0,
-                        "t_instance": mux_instance.uuid.int,
-                    }
+                    f_port=io_ports["out_port"].uuid,
+                    t_port=mux_module.portlist[3],
+                    f_instance=None,
+                    t_instance=mux_instance.uuid,
                 ),
             ]
 
             wire_connections: list[VConnection] = [
                 VConnection(
-                    {
-                        "f_port": add_module.portlist[4].int,
-                        "t_port": mux_module.portlist[0].int,
-                        "f_instance": add_instance.uuid.int,
-                        "t_instance": mux_instance.uuid.int,
-                    }
+                    f_port=add_module.portlist[4],
+                    t_port=mux_module.portlist[0],
+                    f_instance=add_instance.uuid,
+                    t_instance=mux_instance.uuid,
                 ),
                 VConnection(
-                    {
-                        "f_port": sub_module.portlist[4].int,
-                        "t_port": mux_module.portlist[1].int,
-                        "f_instance": sub_instance.uuid.int,
-                        "t_instance": mux_instance.uuid.int,
-                    }
+                    f_port=sub_module.portlist[4],
+                    t_port=mux_module.portlist[1],
+                    f_instance=sub_instance.uuid,
+                    t_instance=mux_instance.uuid,
                 ),
             ]
 
     top_connections = io_connections + wire_connections
+
+    print(f"TOP CONNECTIONS = {top_connections}")
+
+    for connection in top_connections:
+        vcompdbase.addComp(connection)
+
+    for _, port in io_ports.items():
+        vcompdbase.addComp(port)
 
     v_design: VDesign = VDesign(
         [port.uuid for _, port in io_ports.items()],
         [conn.uuid for conn in top_connections],
         dbaseview=vcompdbase,
     )
+
+    print(f"---- DESIGN DICTIONARY ----\n{v_design.toDict()}")
+
+    design_ast = v_design.makeAST()
+
+    design_ast.show()
+
+    # codegen = ASTCodeGenerator()
+    # result = codegen.visit(design_ast)

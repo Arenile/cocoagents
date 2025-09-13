@@ -1,7 +1,8 @@
 from abc import abstractmethod
+
+# import json
 from uuid import UUID, uuid4
 from enum import Enum
-import pyverilog.vparser.ast as vast
 
 
 class PORT_TYPE(Enum):
@@ -17,6 +18,7 @@ class COMPONENT_TYPE(Enum):
     WIRE = 3
     INSTANCE = 4
     MODULE = 5
+    CONNECTION = 6
 
 
 class VComponent:
@@ -70,6 +72,85 @@ class VInternal(VComponent):
         return super().toDict() | {
             "width": self.width,
             "v_module": self.v_module.int if self.v_module is not None else 0,
+        }
+
+
+class VConnection(VComponent):
+    def __init__(
+        self,
+        f_instance: UUID | None = None,
+        t_instance: UUID | None = None,
+        f_port: UUID | None = None,
+        t_port: UUID | None = None,
+        json_init: dict[str, int | str | list] | None = None,
+    ) -> None:
+        """
+        Initialize with a dictionary of the form:
+        {
+            "f_instance": UUID,
+            "t_instance": UUID,
+            "f_port": UUID,
+            "t_port": UUID
+        }
+        """
+        self.comp_type: COMPONENT_TYPE = COMPONENT_TYPE.CONNECTION
+        if json_init is None:
+            self.f_instance: UUID | None = (
+                f_instance if f_instance is not None else None
+            )
+            self.t_instance: UUID | None = (
+                t_instance if t_instance is not None else None
+            )
+            self.f_port: UUID | None = f_port if f_port is not None else None
+            self.t_port: UUID | None = t_port if t_port is not None else None
+            self.uuid: UUID = uuid4()
+        else:
+            self.f_instance: UUID | None = (
+                UUID(int=json_init["f_instance"])
+                if (
+                    isinstance(json_init["f_instance"], int)
+                    and (json_init["f_instance"] != 0)
+                )
+                else None
+            )
+            self.t_instance: UUID | None = (
+                UUID(int=json_init["t_instance"])
+                if (
+                    isinstance(json_init["t_instance"], int)
+                    and (json_init["t_instance"] != 0)
+                )
+                else None
+            )
+            self.f_port: UUID | None = (
+                UUID(int=json_init["f_port"])
+                if isinstance(json_init["f_port"], int)
+                else None
+            )
+            self.t_port: UUID | None = (
+                UUID(int=json_init["t_port"])
+                if isinstance(json_init["t_port"], int)
+                else None
+            )
+            try:
+                self.uuid: UUID = (
+                    UUID(int=json_init["uuid"])
+                    if isinstance(json_init["uuid"], int)
+                    else uuid4()
+                )
+            except KeyError:
+                self.uuid: UUID = uuid4()
+
+        self.name = f"{self.f_port}_to_{self.t_port}"
+
+    def __repr__(self) -> str:
+        return f"CONNECTION:{self.uuid}={self.f_instance}_{self.f_port}_to_{self.t_instance}_{self.t_port}"
+
+    def toDict(self) -> dict[str, int | str | list]:
+        return super().toDict() | {
+            "f_instance": self.f_instance.int if self.f_instance is not None else 0,
+            "t_instance": self.t_instance.int if self.t_instance is not None else 0,
+            "f_port": self.f_port.int if self.f_port is not None else 0,
+            "t_port": self.t_port.int if self.t_port is not None else 0,
         }
 
 
@@ -269,40 +350,3 @@ class VModule(VComponent):
         """
         self.portlist.append(p_uuid)
         return len(self.portlist)
-
-
-def make_v_module_from_ast(ast_input: vast.Source, mod_idx: int = 0) -> VModule:
-    working_mod: vast.ModuleDef = ast_input.children()[0].children()[mod_idx]
-    working_ports_list: tuple[vast.Ioport] = working_mod.portlist.children()
-
-    w_portlist: list[VPort] = []
-    # w_dec_instances: list[VInstance] = []
-
-    new_vmodule: VModule = VModule()
-
-    for wport_idx, wport in enumerate(working_ports_list):
-        wport_type: PORT_TYPE = PORT_TYPE.INPUT
-        wport_width: int = 1
-
-        if isinstance(wport.first, vast.Output):
-            wport_type = PORT_TYPE.OUTPUT
-        elif isinstance(wport.first, vast.Inout):
-            wport_type = PORT_TYPE.INOUT
-
-        if isinstance(wport.first.width, vast.Width):
-            wport_width = (
-                int(wport.first.width.msb.value) - int(wport.first.width.lsb.value) + 1
-            )
-
-        w_portlist.append(
-            VPort(
-                wport.first.name, wport_width, wport_type, new_vmodule.uuid, wport_idx
-            )
-        )
-
-    # TODO: Eventually handle the instnaces that might be declared within a module being initialized as well
-
-    for port in w_portlist:
-        new_vmodule.addPort(port.uuid)
-
-    return new_vmodule
