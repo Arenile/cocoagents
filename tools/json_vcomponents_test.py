@@ -1,3 +1,4 @@
+from re import sub
 from typing import Any
 from uuid import uuid4
 
@@ -114,8 +115,15 @@ if __name__ == "__main__":
 
     vcompdbase: VCompDatabaseView = VCompDatabaseView()
 
+    module_from_ast: list[
+        tuple[json_vcomponents.VModule, list[json_vcomponents.VPort]]
+    ] = []
+
     for vermod_idx in range(count_mods_in_source(extop_ast)):
-        vermod_list.append(make_v_module_from_ast(extop_ast, vcompdbase, vermod_idx))
+        module_from_ast.append(
+            make_v_module_from_ast(extop_ast, vcompdbase, vermod_idx)
+        )
+        vermod_list.append(module_from_ast[vermod_idx][0])
 
     io_ports: dict[str, json_vcomponents.VPort] = {
         "a_port": json_vcomponents.VPort(
@@ -152,6 +160,10 @@ if __name__ == "__main__":
     )
 
     [vcompdbase.addComp(vermod) for vermod in vermod_list]
+
+    vcompdbase.addComp(add_instance)
+    vcompdbase.addComp(sub_instance)
+    vcompdbase.addComp(mux_instance)
 
     io_connections: list[VConnection] = []
     wire_connections: list[VConnection] = []
@@ -259,6 +271,10 @@ if __name__ == "__main__":
     for _, port in io_ports.items():
         vcompdbase.addComp(port)
 
+    for module in module_from_ast:
+        for port in module[1]:
+            vcompdbase.addComp(port)
+
     v_design: VDesign = VDesign(
         [port.uuid for _, port in io_ports.items()],
         [conn.uuid for conn in top_connections],
@@ -271,5 +287,7 @@ if __name__ == "__main__":
 
     design_ast.show()
 
-    # codegen = ASTCodeGenerator()
-    # result = codegen.visit(design_ast)
+    codegen = ASTCodeGenerator()
+    result = codegen.visit(design_ast)
+
+    print(f"========== RESULT OF CODEGEN! ===========\n{result}")

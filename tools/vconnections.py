@@ -60,7 +60,7 @@ def format_connection(connection: VConnection, dbase: VCompDatabaseView) -> str:
 
 def make_v_module_from_ast(
     ast_input: vast.Source, dbaseinst: VCompDatabaseView, mod_idx: int = 0
-) -> VModule:
+) -> tuple[VModule, list[VPort]]:
     working_mod: vast.ModuleDef = ast_input.children()[0].children()[mod_idx]
     working_ports_list: tuple[vast.Ioport] = working_mod.portlist.children()
 
@@ -93,9 +93,9 @@ def make_v_module_from_ast(
 
     for port in w_portlist:
         new_vmodule.addPort(port.uuid)
-        dbaseinst.addComp(port)
+        # dbaseinst.addComp(port)
 
-    return new_vmodule
+    return new_vmodule, w_portlist
 
 
 class VDesign:
@@ -314,7 +314,7 @@ class VDesign:
         vast_portslist = vast.Portlist(vast_portslist)
 
         ast_module: vast.ModuleDef = vast.ModuleDef(
-            "top", vast_paramlist, vast_portslist, vast_itemlist
+            "top", None, vast_portslist, vast_itemlist
         )
 
         return ast_module
