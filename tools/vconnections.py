@@ -23,14 +23,29 @@ def count_mods_in_source(ast_source: vast.Source) -> int:
 
 class VConnection:
     def __init__(self, json_init: dict[str, int]) -> None:
+        """
+        Initialize with a dictionary of the form:
+        {
+            "f_instance": UUID,
+            "t_instance": UUID,
+            "f_port": UUID,
+            "t_port": UUID
+        }
+        """
         self.f_instance: UUID | None = (
             UUID(int=json_init["f_instance"])
-            if isinstance(json_init["f_instance"], int)
+            if (
+                isinstance(json_init["f_instance"], int)
+                and (json_init["f_instance"] != 0)
+            )
             else None
         )
         self.t_instance: UUID | None = (
             UUID(int=json_init["t_instance"])
-            if isinstance(json_init["t_instance"], int)
+            if (
+                isinstance(json_init["t_instance"], int)
+                and (json_init["t_instance"] != 0)
+            )
             else None
         )
         self.f_port: UUID | None = (
@@ -44,11 +59,13 @@ class VConnection:
             else None
         )
         try:
-            self.uuid = (
-                json_init["uuid"] if isinstance(json_init["uuid"], int) else uuid4()
+            self.uuid: UUID = (
+                UUID(int=json_init["uuid"])
+                if isinstance(json_init["uuid"], int)
+                else uuid4()
             )
         except KeyError:
-            self.uuid = uuid4()
+            self.uuid: UUID = uuid4()
 
     def __repr__(self) -> str:
         return f"CONNECTION:{self.uuid}={self.f_instance}_{self.f_port}_to_{self.t_instance}_{self.t_port}"
